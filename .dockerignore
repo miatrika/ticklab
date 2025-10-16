@@ -1,0 +1,7 @@
+/vendor
+/node_modules
+/.git
+/storage
+/vendor_data
+.env
+

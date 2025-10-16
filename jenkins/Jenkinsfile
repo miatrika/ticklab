@@ -1,0 +1,85 @@
+// jenkins/Jenkinsfile
+pipeline {
+    agent any
+
+    environment {
+        REGISTRY = "docker.io/your-dockerhub-username/ticklab"  // CHANGE
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+        DEPLOY_USER = "deploy_user"                             // CHANGE
+        DEPLOY_HOST = "your.server.ip"                          // CHANGE
+        DEPLOY_PATH = "/var/www/ticklab"                        // CHANGE
+    }
+
+    options {
+        ansiColor('xterm')
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+        disableConcurrentBuilds()
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build (modular)') {
+            steps {
+                script { load 'jenkins/stages/build.groovy' }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                script { load 'jenkins/stages/test.groovy' }
+            }
+        }
+
+        stage('QA') {
+            steps {
+                script { load 'jenkins/stages/qa.groovy' }
+            }
+        }
+
+        stage('Security Scan') {
+            steps {
+                script { load 'jenkins/stages/security.groovy' }
+            }
+        }
+
+        stage('Package & Push') {
+            steps {
+                script {
+                    // build image and push
+                    sh "docker build -t ${REGISTRY}:${IMAGE_TAG} ."
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
+                        sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
+                        sh "docker tag ${REGISTRY}:${IMAGE_TAG} ${REGISTRY}:latest"
+                        sh "docker push ${REGISTRY}:${IMAGE_TAG}"
+                        sh "docker push ${REGISTRY}:latest"
+                    }
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script { load 'jenkins/stages/deploy.groovy' }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Pipeline completed successfully."
+        }
+        failure {
+            echo "Pipeline failed — check logs."
+        }
+        always {
+            sh 'docker system prune -af || true'
+        }
+    }
+}
+
