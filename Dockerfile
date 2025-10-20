@@ -1,30 +1,55 @@
-# Dockerfile (ticklab/Dockerfile)
-########### BUILD STAGE (composer deps) ###########
+# ===============================
+# 🧩 Étape 1 : Builder les dépendances PHP avec Composer
+# ===============================
 FROM composer:2 AS vendor
-WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
-########### APP STAGE (runtime) ###########
+WORKDIR /app
+
+# Copie uniquement les fichiers Composer pour profiter du cache Docker
+COPY composer.json composer.lock ./
+
+# Installe TOUTES les dépendances (prod + dev)
+# car "laravel/pail" est dans require-dev
+RUN composer install \
+    --no-interaction \
+    --prefer-dist \
+    --optimize-autoloader
+
+# ===============================
+# ⚙️ Étape 2 : Runtime PHP-FPM
+# ===============================
 FROM php:8.2-fpm
 
-# system deps
+# Installe les extensions nécessaires à Laravel
 RUN apt-get update && apt-get install -y \
-    git curl zip unzip libpng-dev libjpeg-dev libfreetype6-dev libonig-dev libxml2-dev libzip-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+    git \
+    curl \
+    zip \
+    unzip \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libonig-dev \
+    libxml2-dev \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# copy composer from vendor stage
-COPY --from=vendor /app /var/www/html
-
-# copy the rest of the source
+# Dossier de travail dans le conteneur
 WORKDIR /var/www/html
-COPY . /var/www/html
 
-# composer binary already in vendor stage; set permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+# Copie le projet Laravel
+COPY . .
 
+# Copie les dépendances PHP depuis l’étape Composer
+COPY --from=vendor /app/vendor ./vendor
+
+# Assure-toi que le dossier storage et cache soient accessibles à PHP
+RUN mkdir -p storage bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
+# Expose le port PHP-FPM
 EXPOSE 9000
-CMD ["php-fpm"]
 
+# Lancement du serveur PHP-FPM
+CMD ["php-fpm"]
