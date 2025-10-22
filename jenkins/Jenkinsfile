@@ -3,10 +3,10 @@ pipeline {
     agent any
 
     environment {
-        REGISTRY = "docker.io/your-dockerhub-username/ticklab"  // CHANGE
+        REGISTRY = "docker.io/miatrika05/ticklab"  // CHANGE
         IMAGE_TAG = "${env.BUILD_NUMBER}"
-        DEPLOY_USER = "deploy_user"                             // CHANGE
-        DEPLOY_HOST = "your.server.ip"                          // CHANGE
+        DEPLOY_USER = "root"                             // CHANGE
+        DEPLOY_HOST = "192.168.100.101"                          // CHANGE
         DEPLOY_PATH = "/var/www/ticklab"                        // CHANGE
     }
 
