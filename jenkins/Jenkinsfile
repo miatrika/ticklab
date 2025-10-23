@@ -11,10 +11,10 @@ pipeline {
     }
 
     options {
-        ansiColor('xterm')
-        timestamps()
-        buildDiscarder(logRotator(numToKeepStr: '20'))
-        disableConcurrentBuilds()
+    wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm'])
+    timestamps()
+    buildDiscarder(logRotator(numToKeepStr: '20'))
+    disableConcurrentBuilds()
     }
 
     stages {
