@@ -28,12 +28,10 @@ pipeline {
 
         stage('Build (modular)') {
             steps {
-                ansiColor('xterm') {
                     script {
                         load 'ticklab/jenkins/stages/build.groovy'
                     }
                 }
-            }
         }
 
         stage('Test') {
