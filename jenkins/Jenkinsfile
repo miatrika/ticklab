@@ -22,7 +22,7 @@ pipeline {
                     $class: 'GitSCM',
                     branches: [[name: '*/main']],
                     userRemoteConfigs: [[url: 'git@github.com:miatrika/ticklab.git']]
-        ])
+                    ])
             }
         }
 
@@ -30,7 +30,7 @@ pipeline {
             steps {
                 ansiColor('xterm') {
                     script {
-                        load 'jenkins/stages/build.groovy'
+                        load 'ticklab/jenkins/stages/build.groovy'
                     }
                 }
             }
