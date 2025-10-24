@@ -25,7 +25,8 @@ pipeline {
         stage('Build (modular)') {
             steps {
                     script {
-                        load 'ticklab/jenkins/stages/build.groovy'
+                       load "${env.WORKSPACE}/jenkins/stages/build.groovy"
+
                     }
                 }
         }
