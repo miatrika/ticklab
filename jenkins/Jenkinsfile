@@ -18,11 +18,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                    checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: '*/main']],
-                    userRemoteConfigs: [[url: 'git@github.com:miatrika/ticklab.git']]
-                    ])
+                    checkout scm
             }
         }
 
