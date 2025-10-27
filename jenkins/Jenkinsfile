@@ -35,7 +35,7 @@ pipeline {
             steps {
                 ansiColor('xterm') {
                     script {
-                        load 'jenkins/stages/test.groovy'
+                        load '${env.WORKSPACE}/jenkins/stages/test.groovy'
                     }
                 }
             }
@@ -45,7 +45,7 @@ pipeline {
             steps {
                 ansiColor('xterm') {
                     script {
-                        load 'jenkins/stages/qa.groovy'
+                        load '${env.WORKSPACE}/jenkins/stages/qa.groovy'
                     }
                 }
             }
@@ -55,7 +55,7 @@ pipeline {
             steps {
                 ansiColor('xterm') {
                     script {
-                        load 'jenkins/stages/security.groovy'
+                        load '${env.WORKSPACE}/jenkins/stages/security.groovy'
                     }
                 }
             }

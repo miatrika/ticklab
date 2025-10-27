@@ -7,6 +7,9 @@ services:
       dockerfile: Dockerfile
       args:
         APP_ENV: ${APP_ENV:-local}
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     image: ticklab_app:latest
     container_name: ticklab_app
     restart: unless-stopped
