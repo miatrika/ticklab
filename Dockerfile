@@ -23,10 +23,6 @@ RUN if [ "$APP_ENV" = "local" ]; then \
 # ===============================
 FROM php:8.2-fpm
 
-
-RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf \
-    && echo "nameserver 1.1.1.1" >> /etc/resolv.conf
-
 # Installe les extensions nécessaires à Laravel + netcat pour entrypoint
 # Installe les extensions nécessaires à Laravel + netcat-openbsd pour entrypoint
 RUN apt-get update && apt-get install -y \
