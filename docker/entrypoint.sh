@@ -7,10 +7,15 @@ while ! nc -z "$DB_HOST" "$DB_PORT"; do
   sleep 2
 done
 
-echo "MySQL is up. Running migrations..."
+echo "MySQL is up."
 
-# Run migrations
-php artisan migrate --force || true
+# Run migrations only if artisan exists
+if [ -f /var/www/html/artisan ]; then
+  echo "Running migrations..."
+  php artisan migrate --force || true
+else
+  echo "No artisan file found, skipping migrations."
+fi
 
 # Start PHP-FPM
 php-fpm -F
