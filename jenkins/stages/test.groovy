@@ -1,14 +1,16 @@
-// jenkins/stages/test.groovy
 echo "=== STAGE: Run Laravel tests (phpunit) ==="
 
 try {
     sh '''
     set -eux
-    # Ensure DB up and migrations for test env (use sqlite in memory if preferred)
+    # Démarre uniquement la DB
     docker-compose up -d db
-    docker-compose run --rm -T app php artisan migrate --force
-    # run tests (works with Laravel 8/9)
-    docker-compose run --rm -T app vendor/bin/phpunit --configuration phpunit.xml
+
+    # Lance migrations + tests dans **un seul run** pour éviter de relancer l'entrypoint
+    docker-compose run --rm -T -e CI=true app sh -c "
+        php artisan migrate --force &&
+        vendor/bin/phpunit --configuration phpunit.xml
+    "
     '''
     echo "✅ Tests OK"
 } catch (err) {
