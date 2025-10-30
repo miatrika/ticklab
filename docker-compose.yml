@@ -25,6 +25,7 @@ services:
       - DB_DATABASE=${DB_DATABASE:-ticklab}
       - DB_USERNAME=${DB_USERNAME:-root}
       - DB_PASSWORD=${DB_PASSWORD:-15182114}
+      - CI=true
     networks:
       - ticklab_net
     depends_on:
