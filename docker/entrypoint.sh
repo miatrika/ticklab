@@ -14,10 +14,17 @@ else
   echo "No artisan file found, skipping migrations."
 fi
 
-# 🔹 Si on est dans un environnement CI (Jenkins) ou une commande docker-compose run
-if [ "$CI" = "true" ] || [ "$1" != "" ]; then
+# Vérifie si on est dans un environnement CI/CD
+if [ "$CI" = "true" ]; then
   echo "CI/test environment detected — skipping PHP-FPM start."
-  exec "$@"  # exécute la commande demandée (phpcs, phpstan, etc.)
+  # Si une commande a été passée (ex: composer, phpcs, phpstan)
+  if [ -n "$1" ]; then
+    echo "Executing command: $@"
+    exec "$@"
+  else
+    echo "No command provided. Exiting cleanly."
+    exit 0
+  fi
 else
   echo "Starting PHP-FPM..."
   exec php-fpm -F

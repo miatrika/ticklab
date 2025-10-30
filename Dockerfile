@@ -11,20 +11,20 @@ COPY composer.json composer.lock ./
 # ARG pour définir l'environnement
 ARG APP_ENV=production
 
-# Installe les dépendances sans exécuter les scripts pour éviter l'erreur artisan
+# Installe les dépendances (sans scripts pour éviter artisan)
 RUN if [ "$APP_ENV" = "local" ]; then \
         composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts; \
     else \
         composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts; \
     fi
 
+
 # ===============================
 # ⚙️ Étape 2 : Runtime PHP-FPM
 # ===============================
 FROM php:8.2-fpm
 
-# Installe les extensions nécessaires à Laravel + netcat pour entrypoint
-# Installe les extensions nécessaires à Laravel + netcat-openbsd pour entrypoint
+# Installe les dépendances système et PHP nécessaires à Laravel
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -40,28 +40,29 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# ⚡ Ajout : Installer Composer dans l’image finale (solution stable CI/CD)
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
 # Dossier de travail
 WORKDIR /var/www/html
 
-# Copie tout le projet Laravel
+# Copie du projet
 COPY . .
 
-# Copie les dépendances PHP depuis l’étape Composer
+# Copie des dépendances PHP depuis l’étape Composer
 COPY --from=vendor /app/vendor ./vendor
 
-# Création des dossiers et permissions
+# Permissions
 RUN mkdir -p storage bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
-# Forcer PHP-FPM à écouter sur TCP 9000 pour Nginx
+# PHP-FPM écoute sur TCP (port 9000)
 RUN echo "listen = 0.0.0.0:9000" > /usr/local/etc/php-fpm.d/zz-docker.conf
 
-# Copie de l’entrypoint
+# Copie et autorisation de l’entrypoint
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Expose le port PHP-FPM
 EXPOSE 9000
 
-# Utilisation de l’entrypoint pour automatiser les migrations et sessions
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
