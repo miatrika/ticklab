@@ -8,9 +8,11 @@ try {
 
     # Lance migrations + tests dans **un seul run** pour éviter de relancer l'entrypoint
     docker-compose run --rm -T -e CI=true app sh -c "
-        php artisan migrate --force &&
-        vendor/bin/phpunit --configuration phpunit.xml
+    composer install --no-interaction --prefer-dist &&
+    php artisan migrate --force &&
+    vendor/bin/phpunit --configuration phpunit.xml
     "
+
     '''
     echo "✅ Tests OK"
 } catch (err) {
