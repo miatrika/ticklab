@@ -17,45 +17,38 @@ pipeline {
 
     stages {
         stage('Checkout') {
-            steps {
-                    checkout scm
-            }
+            steps { checkout scm }
         }
 
-        stage('Build (modular)') {
+        stage('Build') {
             steps {
-                    script {
-                       load "${env.WORKSPACE}/jenkins/stages/build.groovy"
-
-                    }
-                }
-        }
-
-        stage('Test') {
-            steps {
-                ansiColor('xterm') {
-                    script {
-                        load "${env.WORKSPACE}/jenkins/stages/test.groovy"
-                    }
+                script {
+                    load "${env.WORKSPACE}/jenkins/stages/build.groovy"
                 }
             }
         }
 
-        stage('QA') {
-            steps {
-                ansiColor('xterm') {
-                    script {
-                        load "${env.WORKSPACE}/jenkins/stages/qa.groovy"
+        stage('Test & Quality') {
+            parallel {
+                stage('Unit Tests') {
+                    steps {
+                        ansiColor('xterm') {
+                            script { load "${env.WORKSPACE}/jenkins/stages/test.groovy" }
+                        }
                     }
                 }
-            }
-        }
-
-        stage('Security Scan') {
-            steps {
-                ansiColor('xterm') {
-                    script {
-                        load "${env.WORKSPACE}/jenkins/stages/security.groovy"
+                stage('Static Analysis') {
+                    steps {
+                        ansiColor('xterm') {
+                            script { load "${env.WORKSPACE}/jenkins/stages/qa.groovy" }
+                        }
+                    }
+                }
+                stage('Security Scan') {
+                    steps {
+                        ansiColor('xterm') {
+                            script { load "${env.WORKSPACE}/jenkins/stages/security.groovy" }
+                        }
                     }
                 }
             }
@@ -80,23 +73,18 @@ pipeline {
         stage('Deploy') {
             steps {
                 ansiColor('xterm') {
-                    script {
-                        load 'jenkins/stages/deploy.groovy'
-                    }
+                    script { load 'jenkins/stages/deploy.groovy' }
                 }
             }
         }
     }
 
     post {
-        success {
-            echo "✅ Pipeline completed successfully."
-        }
-        failure {
-            echo "❌ Pipeline failed — check logs."
-        }
+        success { echo "✅ Pipeline completed successfully." }
+        failure { echo "❌ Pipeline failed — check logs." }
         always {
-            sh 'docker system prune -af || true'
+            sh 'docker container prune -f || true'
+            sh 'docker image prune -f || true'
         }
     }
 }

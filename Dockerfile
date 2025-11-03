@@ -47,6 +47,10 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 # Copie du projet
+# Copie uniquement composer.* pour le cache
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+# Copie le reste des fichiers de l’application
 COPY . .
 
 # Copie des dépendances PHP depuis l’étape Composer
