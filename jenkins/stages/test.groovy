@@ -9,7 +9,6 @@ try {
     # Lance migrations + tests dans un conteneur temporaire
     docker-compose run --rm -T -e CI=true app sh -c "
         cp .env.testing .env &&
-        php artisan key:generate --ansi &&
         php artisan migrate:fresh --seed --force &&
         vendor/bin/phpunit --configuration phpunit.xml
     "
