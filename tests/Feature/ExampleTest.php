@@ -7,22 +7,30 @@ use App\Models\User;
 
 class ExampleTest extends TestCase
 {
-    public function test_homepage_returns_success()
+    /** @test */
+    public function homepage_redirects_to_login()
     {
-        // Crée un utilisateur factice pour passer les middleware auth
-        $user = User::factory()->create();
+        $response = $this->get('/'); // la route '/' redirige vers /login
+        $response->assertStatus(302);
+        $response->assertRedirect('/login');
+    }
 
-        // Accède à la route '/' en simulant l'utilisateur connecté
-        $response = $this->actingAs($user)->get('/');
-
-        // Vérifie que la réponse HTTP est 200
+    /** @test */
+    public function login_page_is_accessible()
+    {
+        $response = $this->get('/login'); // route publique réelle
         $response->assertStatus(200);
     }
 
-    public function test_public_route()
+    /** @test */
+    public function admin_dashboard_requires_authentication()
     {
-        // Si tu as une route publique, tu peux tester sans utilisateur
-        $response = $this->get('/public-route');
+        $response = $this->get('/admin/dashboard');
+        $response->assertStatus(302); // redirige vers login si pas connecté
+
+        // Tester avec utilisateur connecté
+        $admin = User::factory()->create(['role' => 'admin']);
+        $response = $this->actingAs($admin)->get('/admin/dashboard');
         $response->assertStatus(200);
     }
 }
