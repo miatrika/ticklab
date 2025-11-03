@@ -2,18 +2,27 @@
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use App\Models\User;
 
 class ExampleTest extends TestCase
 {
-    /**
-     * A basic test example.
-     */
-    public function test_the_application_returns_a_successful_response(): void
+    public function test_homepage_returns_success()
     {
-        $response = $this->get('/');
+        // Crée un utilisateur factice pour passer les middleware auth
+        $user = User::factory()->create();
 
+        // Accède à la route '/' en simulant l'utilisateur connecté
+        $response = $this->actingAs($user)->get('/');
+
+        // Vérifie que la réponse HTTP est 200
+        $response->assertStatus(200);
+    }
+
+    public function test_public_route()
+    {
+        // Si tu as une route publique, tu peux tester sans utilisateur
+        $response = $this->get('/public-route');
         $response->assertStatus(200);
     }
 }
