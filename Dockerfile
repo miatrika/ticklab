@@ -8,10 +8,10 @@ WORKDIR /app
 # Copie uniquement les fichiers Composer pour profiter du cache Docker
 COPY composer.json composer.lock ./
 
-# ARG pour définir l'environnement
+# ARG pour définir l'environnement (par défaut = production)
 ARG APP_ENV=production
 
-# Installe les dépendances (sans scripts pour éviter artisan)
+# Installe les dépendances (avec ou sans dev selon l'environnement)
 RUN if [ "$APP_ENV" = "local" ]; then \
         composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts; \
     else \
@@ -24,7 +24,7 @@ RUN if [ "$APP_ENV" = "local" ]; then \
 # ===============================
 FROM php:8.2-fpm
 
-# Installe les dépendances système et PHP nécessaires à Laravel
+# Installe les dépendances système et extensions PHP nécessaires à Laravel
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -40,27 +40,23 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# ⚡ Ajout : Installer Composer dans l’image finale (solution stable CI/CD)
+# ⚡ Ajout : Installer Composer dans l’image finale (utile en CI/CD)
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Dossier de travail
 WORKDIR /var/www/html
 
-# Copie du projet
-# Copie uniquement composer.* pour le cache
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
-# Copie le reste des fichiers de l’application
+# Copie du code source (tout le projet)
 COPY . .
 
-# Copie des dépendances PHP depuis l’étape Composer
+# Copie du dossier vendor depuis l’étape précédente
 COPY --from=vendor /app/vendor ./vendor
 
-# Permissions
+# Permissions nécessaires à Laravel
 RUN mkdir -p storage bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
-# PHP-FPM écoute sur TCP (port 9000)
+# Configuration PHP-FPM pour écouter sur le port 9000
 RUN echo "listen = 0.0.0.0:9000" > /usr/local/etc/php-fpm.d/zz-docker.conf
 
 # Copie et autorisation de l’entrypoint
