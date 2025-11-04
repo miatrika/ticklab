@@ -54,6 +54,17 @@ pipeline {
             }
         }
 
+        stage('Test Credentials') {
+            steps {
+                script {
+                    echo "🧪 Vérification des credentials"
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'U', passwordVariable: 'P')]) {
+                        echo "✅ Credentials trouvés pour utilisateur: ${U}"
+                    }
+                }
+            }
+        }
+
         stage('Package & Push') {
             steps {
                 ansiColor('xterm') {
