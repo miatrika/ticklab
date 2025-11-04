@@ -60,6 +60,11 @@ pipeline {
                     script {
                         sh "docker build -t ${REGISTRY}:${IMAGE_TAG} ."
                         withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
+                            sh '''
+                                echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin
+                                echo "=== Vérification de la connexion Docker Hub ==="
+                                docker info | grep -A3 "Username" || echo "Pas connecté"
+                            '''
                             sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin || true'
                             sh "docker tag ${REGISTRY}:${IMAGE_TAG} ${REGISTRY}:latest"
                             // sh "docker push ${REGISTRY}:${IMAGE_TAG} || echo 'Push failed'"
