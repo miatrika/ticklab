@@ -58,22 +58,27 @@ pipeline {
             steps {
                 ansiColor('xterm') {
                     script {
+                        echo "=== Étape Package & Push démarrée ==="
                         sh "docker build -t ${REGISTRY}:${IMAGE_TAG} ."
+                        echo "✅ Build terminé"
+
                         withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
+                            echo "🔑 Tentative de connexion Docker Hub pour l'utilisateur : ${DOCKERHUB_USER}"
                             sh '''
-                                echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin
-                                echo "=== Vérification de la connexion Docker Hub ==="
+                                echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin || true
+                                echo "✅ Connexion Docker terminée (même si échec ignoré)"
                                 docker info | grep -A3 "Username" || echo "Pas connecté"
                             '''
-                            sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin || true'
+                            echo "🏷️  Tagging de l'image..."
                             sh "docker tag ${REGISTRY}:${IMAGE_TAG} ${REGISTRY}:latest"
-                            // sh "docker push ${REGISTRY}:${IMAGE_TAG} || echo 'Push failed'"
-                            // sh "docker push ${REGISTRY}:latest"
+                            echo "📦 Package terminé (push désactivé)"
                         }
+                        echo "=== Fin du stage Package & Push ==="
                     }
                 }
             }
         }
+
 
         stage('Deploy') {
             steps {
