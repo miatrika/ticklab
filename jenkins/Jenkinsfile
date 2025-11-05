@@ -5,7 +5,7 @@ pipeline {
         REGISTRY = "docker.io/miatrika05/ticklab"
         IMAGE_TAG = "${env.BUILD_NUMBER}"
         DEPLOY_USER = "miatrika"
-        DEPLOY_HOST = "192.168.100.101"
+        DEPLOY_HOST = "192.168.100.50"
         DEPLOY_PATH = "/var/www/ticklab"
     }
 
