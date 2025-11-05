@@ -1,25 +1,21 @@
 echo "=== STAGE: Deploy to remote server ==="
 
-sshagent(['deploy-ssh']) {
+sshagent(['deploy-ssh']){
     sh """
-    # Créer un dossier temporaire sur le serveur pour le déploiement
-    ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} '
-      mkdir -p ${env.DEPLOY_PATH}
-    '
+      ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} '
+         mkdir -p ${env.DEPLOY_PATH}
+      '
+      scp -o StrictHostKeyChecking=no docker-compose.prod.yml ${env.DEPLOY_USER}@${env.DEPLOY_HOST}:${env.DEPLOY_PATH}/docker-compose.yml
 
-    # Copier le docker-compose.yml depuis Jenkins vers le serveur
-    scp -o StrictHostKeyChecking=no docker-compose.yml ${env.DEPLOY_USER}@${env.DEPLOY_HOST}:${env.DEPLOY_PATH}/docker-compose.yml
-
-    # Lancer docker-compose sur le serveur pour pull les images et démarrer les conteneurs
-    ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} '
-      set -eux
-      cd ${env.DEPLOY_PATH}
-      docker-compose pull       # récupérer les images déjà construites
-      docker-compose up -d      # démarrer les conteneurs
-    '
-    """
-}
-
+       ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} '
+         set -eux
+         cd ${env.DEPLOY_PATH}
+        IMAGE_TAG=${env.BUILD_NUMBER} docker-compose pull
+        IMAGE_TAG=${env.BUILD_NUMBER} docker-compose up -d
+       '
+      """
+  }
+echo
 sh """
 ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} "curl -fs http://localhost:${env.HOST_HTTP_PORT ?: 80}"
 """
