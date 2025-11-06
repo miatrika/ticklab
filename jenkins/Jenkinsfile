@@ -28,17 +28,6 @@ pipeline {
             }
         }
 
-        stage('Build & Push Nginx') {
-            steps {
-                script {
-                    docker.build("docker.io/miatrika05/ticklab-nginx:${env.BUILD_NUMBER}", "--build-arg APP_IMAGE=docker.io/miatrika05/ticklab:${env.BUILD_NUMBER} -f docker/nginx/Dockerfile .")
-                    docker.withRegistry('', 'dockerhub-credentials') {
-                        docker.image("docker.io/miatrika05/ticklab-nginx:${env.BUILD_NUMBER}").push()
-                    }
-                }
-            }
-        }
-
         stage('Test & Quality') {
             parallel {
                 stage('Unit Tests') {
@@ -108,7 +97,20 @@ pipeline {
                             '''
                         }
 
+
                         echo "=== ✅ Fin du stage Package & Push ==="
+                    }
+                }
+            }
+        }
+
+
+        stage('Build & Push Nginx') {
+            steps {
+                script {
+                    docker.build("docker.io/miatrika05/ticklab-nginx:${env.BUILD_NUMBER}", "--build-arg APP_IMAGE=docker.io/miatrika05/ticklab:${env.BUILD_NUMBER} -f docker/nginx/Dockerfile .")
+                    docker.withRegistry('', 'dockerhub-credentials') {
+                        docker.image("docker.io/miatrika05/ticklab-nginx:${env.BUILD_NUMBER}").push()
                     }
                 }
             }
