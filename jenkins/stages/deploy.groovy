@@ -15,8 +15,8 @@ sshagent(['deploy-ssh']) {
       ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} '
          set -eux
          cd ${env.DEPLOY_PATH}
-         IMAGE_TAG=${env.BUILD_NUMBER} docker-compose pull
-         IMAGE_TAG=${env.BUILD_NUMBER} docker-compose up -d --remove-orphans
+         IMAGE_TAG=${env.BUILD_NUMBER} docker compose pull
+         IMAGE_TAG=${env.BUILD_NUMBER} docker compose up -d --remove-orphans
       '
     """
 }
