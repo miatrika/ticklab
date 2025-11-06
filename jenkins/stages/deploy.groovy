@@ -22,7 +22,7 @@ sshagent(['deploy-ssh']) {
 }
 echo""
 sh """
-ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} "curl -fs http://localhost:${env.HOST_HTTP_PORT ?: 80}"
+ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} "curl -fs http://localhost:${env.HOST_HTTP_PORT ?: 8080}"
 """
 
 echo "=== Deploy finished ==="
