@@ -107,12 +107,10 @@ pipeline {
 
         stage('Build & Push Nginx') {
             steps {
-                script {
-                    docker.build("docker.io/miatrika05/ticklab-nginx:${env.BUILD_NUMBER}", "--build-arg APP_IMAGE=docker.io/miatrika05/ticklab:${env.BUILD_NUMBER} -f docker/nginx/Dockerfile .")
-                    docker.withRegistry('', 'dockerhub-creds') {
-                        docker.image("docker.io/miatrika05/ticklab-nginx:${env.BUILD_NUMBER}").push()
-                    }
-                }
+                sh '''
+                docker build -t docker.io/miatrika05/ticklab-nginx:${IMAGE_TAG} -f docker/nginx/Dockerfile .
+                docker push docker.io/miatrika05/ticklab-nginx:${IMAGE_TAG}
+                '''
             }
         }
 
