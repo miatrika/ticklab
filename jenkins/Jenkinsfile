@@ -107,10 +107,20 @@ pipeline {
 
         stage('Build & Push Nginx') {
             steps {
-                sh '''
-                docker build -t docker.io/miatrika05/ticklab-nginx:${IMAGE_TAG} -f docker/nginx/Dockerfile .
-                docker push docker.io/miatrika05/ticklab-nginx:${IMAGE_TAG}
-                '''
+                script {
+                    def imageTag = "${env.IMAGE_TAG}"
+                    sh """
+                        docker build -t docker.io/miatrika05/ticklab-nginx:${imageTag} -f docker/nginx/Dockerfile .
+                    """
+
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh """
+                            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                            docker push docker.io/miatrika05/ticklab-nginx:${imageTag}
+                            docker logout
+                        """
+                    }
+                }
             }
         }
 
