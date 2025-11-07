@@ -1,10 +1,16 @@
-FROM docker.io/miatrika05/ticklab:latest AS app
+# Étape 1 : définir l’image source de Nginx
 FROM nginx:alpine
 
+# Étape 2 : accepter l’argument
+ARG APP_IMAGE
+
+# Étape 3 : importer depuis l’image app (nom complet)
+COPY --from=${APP_IMAGE} /var/www/html/public /var/www/html/public
+
+RUN rm /etc/nginx/conf.d/default.conf
+# Étape 4 : copier la config nginx
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
-# Copie du dossier public depuis l'image app distante
-COPY --from=app /var/www/html/public /var/www/html/public
-
 RUN chown -R nginx:nginx /var/www/html/public
+
 EXPOSE 80

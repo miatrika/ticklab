@@ -111,7 +111,9 @@ pipeline {
                     def imageTag = "${env.IMAGE_TAG}"
                     sh """
                         export DOCKER_BUILDKIT=1
-                        docker build -t docker.io/miatrika05/ticklab-nginx:${imageTag} -f docker/nginx/Dockerfile .
+                        docker build -t docker.io/miatrika05/ticklab-nginx:${IMAGE_TAG} \
+                        --build-arg APP_IMAGE=docker.io/miatrika05/ticklab:${IMAGE_TAG} \
+                        -f docker/nginx/Dockerfile .
                     """
 
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
