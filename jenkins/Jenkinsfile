@@ -110,6 +110,7 @@ pipeline {
                 script {
                     def imageTag = "${env.IMAGE_TAG}"
                     sh """
+                        export DOCKER_BUILDKIT=1
                         docker build -t docker.io/miatrika05/ticklab-nginx:${imageTag} -f docker/nginx/Dockerfile .
                     """
 
