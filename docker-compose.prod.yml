@@ -15,7 +15,7 @@ services:
       - DB_USERNAME=root
       - DB_PASSWORD=15182114
     volumes: 
-      - app_code:/var/www/html
+      # - app_code:/var/www/html
       -  ./app_code/.env.prod:/var/www/html/.env:ro  
       - vendor_data:/var/www/html/vendor
     depends_on:
