@@ -16,7 +16,7 @@ sshagent(['deploy-ssh']) {
 
       # Déplacement du fichier .env dans le bon répertoire (avec sudo)
       ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} '
-         sudo mv /tmp/.env ${env.DEPLOY_PATH}/app_code/.env
+         mv /tmp/.env ${env.DEPLOY_PATH}/app_code/.env
       '
 
       # Lancement du déploiement
@@ -36,9 +36,9 @@ sshagent(['deploy-ssh']) {
     sh """
       # Préparation des dossiers sur le serveur
       ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} '
-         sudo mkdir -p ${env.DEPLOY_PATH}/nginx
-         sudo mkdir -p ${env.DEPLOY_PATH}/app_code
-         sudo chown -R ${env.DEPLOY_USER}:${env.DEPLOY_USER} ${env.DEPLOY_PATH}
+         mkdir -p ${env.DEPLOY_PATH}/nginx
+         mkdir -p ${env.DEPLOY_PATH}/app_code
+         chown -R ${env.DEPLOY_USER}:${env.DEPLOY_USER} ${env.DEPLOY_PATH}
       '
 
       # Copie des fichiers nécessaires
