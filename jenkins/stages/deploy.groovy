@@ -13,7 +13,7 @@ sshagent(['deploy-ssh']) {
       scp -o StrictHostKeyChecking=no nginx/default.conf ${env.DEPLOY_USER}@${env.DEPLOY_HOST}:${env.DEPLOY_PATH}/nginx/default.conf
 
       # === Copie du fichier .env.prod pour le conteneur Laravel ===
-      scp -o StrictHostKeyChecking=no .env.prod ${env.DEPLOY_USER}@${env.DEPLOY_HOST}:${env.DEPLOY_PATH}/app_code/.env.prod
+      scp -o StrictHostKeyChecking=no .env.prod ${env.DEPLOY_USER}@${env.DEPLOY_HOST}:${env.DEPLOY_PATH}/app_code/.env
 
 
       # === Lancement du déploiement ===
