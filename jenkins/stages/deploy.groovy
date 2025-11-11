@@ -2,16 +2,20 @@ echo "=== STAGE: Deploy to remote server ==="
 
 sshagent(['deploy-ssh']) {
     sh """
-      # Crée les dossiers sur le serveur
+      # === Création des dossiers sur le serveur ===
       ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} '
          mkdir -p ${env.DEPLOY_PATH}/nginx
+         mkdir -p ${env.DEPLOY_PATH}/app_code
       '
 
-      # Copie docker-compose et default.conf
+      # === Copie des fichiers nécessaires ===
       scp -o StrictHostKeyChecking=no docker-compose.prod.yml ${env.DEPLOY_USER}@${env.DEPLOY_HOST}:${env.DEPLOY_PATH}/docker-compose.yml
       scp -o StrictHostKeyChecking=no nginx/default.conf ${env.DEPLOY_USER}@${env.DEPLOY_HOST}:${env.DEPLOY_PATH}/nginx/default.conf
 
-      # Lancer les conteneurs
+      # === Copie du fichier .env.prod pour le conteneur Laravel ===
+      scp -o StrictHostKeyChecking=no app_code/.env.prod ${env.DEPLOY_USER}@${env.DEPLOY_HOST}:${env.DEPLOY_PATH}/app_code/.env.prod
+
+      # === Lancement du déploiement ===
       ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} '
          set -eux
          cd ${env.DEPLOY_PATH}
@@ -20,8 +24,10 @@ sshagent(['deploy-ssh']) {
       '
     """
 }
-echo""
+
+echo ""
 sh """
+echo "=== Vérification du déploiement ==="
 ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} "curl -fs http://localhost:${env.HOST_HTTP_PORT ?: 8080}"
 """
 
