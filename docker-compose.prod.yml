@@ -6,6 +6,8 @@ services:
     container_name: ticklab_app
     restart: unless-stopped
     working_dir: /var/www/html
+    env_file:
+      - ./app_code/.env
     environment:
       - APP_ENV=production
       - APP_DEBUG=false

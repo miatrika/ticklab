@@ -1,4 +1,4 @@
-echo "=== STAGE: Deploy to remote server ==="
+echo "=== 🚀 STAGE: Deploy to remote server ==="
 
 sshagent(['deploy-ssh']) {
     sh """
@@ -8,12 +8,12 @@ sshagent(['deploy-ssh']) {
       ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} '
          mkdir -p ${env.DEPLOY_PATH}/nginx
          mkdir -p ${env.DEPLOY_PATH}/app_code
-         mkdir -p ${env.DEPLOY_PATH}
       '
 
-      # === 2️⃣ Générer le fichier .env.prod dynamique ===
+      # === 2️⃣ Générer le fichier .env.deploy basé sur les credentials Jenkins ===
+      echo "⚙️  Génération du .env.deploy sur le serveur..."
       ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} '
-         cat > ${env.DEPLOY_PATH}/.env.prod <<EOF
+         cat > ${env.DEPLOY_PATH}/.env.deploy <<EOF
 APP_NAME=TickLab
 APP_ENV=production
 APP_DEBUG=false
@@ -33,10 +33,11 @@ CACHE_DRIVER=file
 SESSION_DRIVER=database
 QUEUE_CONNECTION=sync
 EOF
-         echo "✅ .env.prod généré avec succès"
+         echo "✅ .env.deploy créé avec succès"
       '
 
       # === 3️⃣ Copier les fichiers nécessaires ===
+      echo "📦 Copie des fichiers docker-compose et nginx..."
       scp -o StrictHostKeyChecking=no docker-compose.prod.yml ${env.DEPLOY_USER}@${env.DEPLOY_HOST}:${env.DEPLOY_PATH}/docker-compose.yml
       scp -o StrictHostKeyChecking=no nginx/default.conf ${env.DEPLOY_USER}@${env.DEPLOY_HOST}:${env.DEPLOY_PATH}/nginx/default.conf
 
@@ -44,14 +45,20 @@ EOF
       ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} '
          set -eux
          cd ${env.DEPLOY_PATH}
+         mv -f .env.deploy app_code/.env.prod
          IMAGE_TAG=${env.BUILD_NUMBER} docker compose pull
          IMAGE_TAG=${env.BUILD_NUMBER} docker compose up -d --remove-orphans
       '
 
-      # === 5️⃣ Générer la clé APP Laravel ===
+      # === 5️⃣ Générer une clé Laravel s’il n’y en a pas ===
+      echo "🔑 Vérification de la clé APP_KEY..."
       ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} '
-         docker exec ticklab_app php artisan key:generate --force
-         echo "✅ Clé Laravel générée avec succès"
+         if ! docker exec ticklab_app php artisan env | grep -q "APP_KEY=base64:"; then
+            docker exec ticklab_app php artisan key:generate --force
+            echo "✅ Nouvelle clé Laravel générée et appliquée"
+         else
+            echo "ℹ️  APP_KEY déjà présente, aucune action nécessaire"
+         fi
       '
     """
 }
@@ -69,4 +76,4 @@ ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} '
 '
 """
 
-echo "=== ✅ Deploy finished ==="
+echo "=== ✅ Déploiement terminé avec succès ==="

@@ -7,6 +7,7 @@ pipeline {
         DEPLOY_USER = "miatrika"
         DEPLOY_HOST = "192.168.100.50"
         DEPLOY_PATH = "/var/www/ticklab"
+        DB_PASSWORD = credentials('ticklab-db-password')
     }
 
     options {
@@ -126,7 +127,6 @@ pipeline {
                 }
             }
         }
-
 
 
         stage('Deploy') {
