@@ -17,7 +17,7 @@ sshagent(['deploy-ssh']) {
     # === 2️⃣ Copier le code Laravel complet ===
     echo "📦 Copie du code Laravel complet..."
     # ⚠️ Utilisation de $WORKSPACE pour pointer correctement vers le code
-    scp -r $WORKSPACE/app_code ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/
+    scp -r $WORKSPACE/* ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/app_code/
 
     # === 3️⃣ Créer le .env sur le serveur ===
     echo "⚙️  Création du .env sur le serveur..."
