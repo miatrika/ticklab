@@ -23,8 +23,10 @@ sshagent(['deploy-ssh']) {
     ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "cat > ${DEPLOY_PATH}/app_code/.env <<EOF
 APP_NAME=TickLab
 APP_ENV=production
+APP_KEY=base64:E4fqEzMmJBOQeHr7Z10WmUKwds+obTfE+cHJxPOnOPs=
 APP_DEBUG=false
 APP_URL=http://localhost:8080
+
 
 LOG_CHANNEL=stack
 LOG_LEVEL=debug
