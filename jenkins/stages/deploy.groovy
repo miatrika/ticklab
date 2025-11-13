@@ -47,7 +47,7 @@
         ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} '
            set -eux
            cd ${env.DEPLOY_PATH}
-           mv -f .env.deploy app_code/.env.prod
+           mv -f .env.deploy app_code/.env
            IMAGE_TAG=${env.BUILD_NUMBER} docker compose pull
            IMAGE_TAG=${env.BUILD_NUMBER} docker compose up -d --remove-orphans
         '
