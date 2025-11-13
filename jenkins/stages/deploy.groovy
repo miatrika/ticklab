@@ -14,14 +14,17 @@ sshagent(['deploy-ssh']) {
       mkdir -p ${DEPLOY_PATH}/app_code
     "
 
-    # === 2️⃣ Créer le .env sur le serveur ===
+    # === 2️⃣ Copier le code Laravel complet ===
+    echo "📦 Copie du code Laravel complet..."
+    scp -r ./app_code/* ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/app_code/
+
+    # === 3️⃣ Créer le .env sur le serveur ===
     echo "⚙️  Création du .env sur le serveur..."
     ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "cat > ${DEPLOY_PATH}/app_code/.env <<EOF
 APP_NAME=TickLab
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=http://localhost:8080
-APP_KEY=base64:E4fqEzMmJBOQeHr7Z10WmUKwds+obTfE+cHJxPOnOPs=
 
 LOG_CHANNEL=stack
 LOG_LEVEL=debug
@@ -40,11 +43,11 @@ EOF"
 
     echo "✅ .env créé avec succès"
 
-    # === 3️⃣ Copier docker-compose et nginx ===
+    # === 4️⃣ Copier docker-compose et nginx ===
     scp -o StrictHostKeyChecking=no docker-compose.prod.yml ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/docker-compose.yml
     scp -o StrictHostKeyChecking=no nginx/default.conf ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/nginx/default.conf
 
-    # === 4️⃣ Déploiement Docker ===
+    # === 5️⃣ Déploiement Docker ===
     ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
       set -eux
       cd ${DEPLOY_PATH}
@@ -52,32 +55,19 @@ EOF"
       IMAGE_TAG=${BUILD_NUMBER} DB_PASSWORD='${DB_PASSWORD}' docker compose up -d --remove-orphans
     "
 
-    # === 5️⃣ Génération automatique de APP_KEY ===
+    # === 6️⃣ Génération automatique de APP_KEY ===
     echo "🔑 Vérification de la clé APP_KEY..."
-    ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} <<'REMOTE'
+    ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
       set -eux
-      ENV_FILE="/var/www/ticklab/app_code/.env"
-
-      if ! grep -q "APP_KEY=" "$ENV_FILE"; then
-          echo "⚙️  Génération d'une nouvelle clé APP_KEY..."
-
-          # Générer la clé dans le container Laravel
+      ENV_FILE='${DEPLOY_PATH}/app_code/.env'
+      if ! grep -q 'APP_KEY=' \"\$ENV_FILE\"; then
+          echo '⚙️  Génération d'une nouvelle clé APP_KEY...'
           docker exec ticklab_app php artisan key:generate --force
-
-          # Récupérer la clé générée
-          APP_KEY=$(docker exec ticklab_app php -r "require 'vendor/autoload.php'; echo getenv('APP_KEY');")
-
-          if [ -n "$APP_KEY" ]; then
-              sed -i "/APP_ENV=/a APP_KEY=$APP_KEY" "$ENV_FILE"
-              echo "✅ APP_KEY générée et ajoutée dans .env"
-          else
-              echo "❌ Impossible de générer la clé APP_KEY"
-              exit 1
-          fi
+          echo '✅ APP_KEY générée'
       else
-          echo "ℹ️  APP_KEY déjà présente dans .env"
+          echo 'ℹ️  APP_KEY déjà présente dans .env'
       fi
-REMOTE
+    "
     '''
   }
 }
