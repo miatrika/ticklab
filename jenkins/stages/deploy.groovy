@@ -58,16 +58,22 @@ EOF
     "
 
     # === 6️⃣ Vérification de APP_KEY ===
-    echo "🔑 Vérification de la clé APP_KEY..."
-    ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
-      set -eux
-      ENV_FILE=${DEPLOY_PATH}/app_code/.env
-      if ! grep -q 'APP_KEY=' \$ENV_FILE; then
-          echo '⚙️  APP_KEY manuelle à insérer nécessaire dans .env'
-      else
-          echo 'ℹ️  APP_KEY déjà présente dans .env'
-      fi
-    "
+        echo "🔑 Vérification de la clé APP_KEY..."
+        ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
+        set -e
+        ENV_FILE=${DEPLOY_PATH}/app_code/.env
+        if [ -f \"\$ENV_FILE\" ]; then
+            if ! grep -q 'APP_KEY=' \"\$ENV_FILE\"; then
+                echo '⚙️  APP_KEY manuelle à insérer nécessaire'
+            else
+                echo 'ℹ️  APP_KEY déjà présente dans .env'
+            fi
+        else
+            echo '❌ .env non trouvé à \$ENV_FILE'
+            exit 1
+        fi
+        "
+
     '''
   }
 }
