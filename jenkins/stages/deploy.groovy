@@ -16,7 +16,8 @@ sshagent(['deploy-ssh']) {
 
     # === 2️⃣ Copier le code Laravel complet ===
     echo "📦 Copie du code Laravel complet..."
-    scp -r ./app_code/* ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/app_code/
+    # ⚠️ Utilisation de $WORKSPACE pour pointer correctement vers le code
+    scp -r $WORKSPACE/app_code ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/
 
     # === 3️⃣ Créer le .env sur le serveur ===
     echo "⚙️  Création du .env sur le serveur..."
@@ -55,15 +56,13 @@ EOF"
       IMAGE_TAG=${BUILD_NUMBER} DB_PASSWORD='${DB_PASSWORD}' docker compose up -d --remove-orphans
     "
 
-    # === 6️⃣ Génération automatique de APP_KEY ===
+    # === 6️⃣ Vérification de APP_KEY ===
     echo "🔑 Vérification de la clé APP_KEY..."
     ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
       set -eux
       ENV_FILE='${DEPLOY_PATH}/app_code/.env'
       if ! grep -q 'APP_KEY=' \"\$ENV_FILE\"; then
-          echo '⚙️  Génération d'une nouvelle clé APP_KEY...'
-          docker exec ticklab_app php artisan key:generate --force
-          echo '✅ APP_KEY générée'
+          echo '⚙️  APP_KEY manuelle à insérer nécessaire'
       else
           echo 'ℹ️  APP_KEY déjà présente dans .env'
       fi
