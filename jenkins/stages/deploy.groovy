@@ -55,17 +55,36 @@ EOF"
       echo "🔑 Vérification de la clé APP_KEY..."
       ssh -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST "
         set -eux
-        if ! grep -q 'APP_KEY=' $DEPLOY_PATH/app_code/.env; then
+
+        ENV_FILE=\"$DEPLOY_PATH/app_code/.env\"
+
+        if ! grep -q 'APP_KEY=' \$ENV_FILE; then
             echo '⚙️  Génération d\\'une nouvelle clé APP_KEY...'
-            docker exec ticklab_app php artisan key:generate --show > /tmp/key.txt
-            APP_KEY=$(cat /tmp/key.txt | tr -d '\\r\\n')
-            sed -i \"/APP_ENV=/a APP_KEY=$APP_KEY\" $DEPLOY_PATH/app_code/.env
-            rm -f /tmp/key.txt
-            echo '✅ APP_KEY générée et ajoutée dans .env'
+
+            # On génère la clé dans le container, sans --show pour compatibilité
+            KEY_OUTPUT=\$(docker exec ticklab_app php artisan key:generate --force 2>&1 || true)
+
+            # Extraire la clé si artisan ne l’affiche pas (Laravel <8)
+            APP_KEY=\$(docker exec ticklab_app php -r 'require \"vendor/autoload.php\"; echo env(\"APP_KEY\");')
+
+            # Si vide, on tente encore une fois
+            if [ -z \"\$APP_KEY\" ]; then
+                APP_KEY=\$(docker exec ticklab_app php artisan tinker --execute='echo env(\"APP_KEY\");')
+            fi
+
+            # Ajouter dans le .env distant
+            if [ -n \"\$APP_KEY\" ]; then
+                sed -i \"/APP_ENV=/a APP_KEY=\$APP_KEY\" \$ENV_FILE
+                echo '✅ APP_KEY générée et ajoutée dans .env'
+            else
+                echo '❌ Impossible de générer automatiquement la clé APP_KEY'
+                exit 1
+            fi
         else
             echo 'ℹ️  APP_KEY déjà présente dans .env'
         fi
       "
+
     '''
   }
 }
