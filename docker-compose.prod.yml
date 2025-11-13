@@ -1,22 +1,22 @@
-version: "3.9"
-
 services:
   app:
     image: docker.io/miatrika05/ticklab:${IMAGE_TAG}
     container_name: ticklab_app
     restart: unless-stopped
     working_dir: /var/www/html
+    env_file:
+      - ./app_code/.env
     environment:
-      APP_ENV: production
-      APP_DEBUG: "false"
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_DATABASE: ticklab
-      DB_USERNAME: root
-      DB_PASSWORD: ${DB_PASSWORD}
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=ticklab
+      - DB_USERNAME=root
+      - DB_PASSWORD=${DB_PASSWORD}
     volumes:
-      - ./app_code:/var/www/html:ro
-      - vendor_data:/var/www/html/vendor
+      - ./app_code:/var/www/html        # ✅ Monte le code complet de ton app
+      - vendor_data:/var/www/html/vendor # ✅ Volume persistant pour les dépendances PHP
     depends_on:
       - db
     networks:
@@ -25,7 +25,7 @@ services:
       - 8.8.8.8
       - 1.1.1.1
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:80 || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9000 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -38,7 +38,7 @@ services:
     ports:
       - "${HOST_HTTP_PORT:-8080}:80"
     volumes:
-      - ./app_code:/var/www/html:ro
+      - ./app_code:/var/www/html:ro         # ✅ Lecture seule pour Nginx
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - app
@@ -57,7 +57,6 @@ services:
       MYSQL_DATABASE: ticklab
     volumes:
       - db_data:/var/lib/mysql
-      - ./mysql-init:/docker-entrypoint-initdb.d
     networks:
       - ticklab_net
 
