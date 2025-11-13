@@ -65,7 +65,6 @@ EOF
       """
     } // end withCredentials
   } // end sshagent
-}
 
 echo "=== 🔍 Vérification du déploiement ==="
 sh """
