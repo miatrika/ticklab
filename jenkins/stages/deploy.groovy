@@ -8,14 +8,13 @@ sshagent(['deploy-ssh']) {
 
       # === 1️⃣ Préparer les dossiers sur le serveur distant ===
       ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} '
-         mkdir -p ${env.DEPLOY_PATH}/nginx
-         mkdir -p ${env.DEPLOY_PATH}/app_code
+        mkdir -p ${env.DEPLOY_PATH}/nginx
+        mkdir -p ${env.DEPLOY_PATH}/app_code
       '
 
-      # === 2️⃣ Générer le fichier .env directement ===
-      echo "⚙️  Génération du .env sur le serveur..."
-      ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} bash -c "'
-cat > ${env.DEPLOY_PATH}/app_code/.env <<EOF
+      # === 2️⃣ Créer le .env directement dans app_code ===
+      echo "⚙️  Création du .env sur le serveur..."
+      ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} "cat > ${env.DEPLOY_PATH}/app_code/.env <<EOF
 APP_NAME=TickLab
 APP_ENV=production
 APP_DEBUG=false
@@ -34,36 +33,42 @@ DB_PASSWORD=${DB_PASSWORD}
 CACHE_DRIVER=file
 SESSION_DRIVER=database
 QUEUE_CONNECTION=sync
-EOF
-'"
-      echo "✅ Fichier .env créé avec succès sur le serveur"
+EOF"
 
-      # === 3️⃣ Copier les fichiers nécessaires ===
+      echo "✅ .env créé avec succès"
+
+      # === 3️⃣ Copier les fichiers Docker ===
       echo "📦 Copie des fichiers docker-compose et nginx..."
       scp -o StrictHostKeyChecking=no docker-compose.prod.yml ${env.DEPLOY_USER}@${env.DEPLOY_HOST}:${env.DEPLOY_PATH}/docker-compose.yml
       scp -o StrictHostKeyChecking=no nginx/default.conf ${env.DEPLOY_USER}@${env.DEPLOY_HOST}:${env.DEPLOY_PATH}/nginx/default.conf
 
       # === 4️⃣ Déploiement Docker ===
       ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} '
-         set -eux
-         cd ${env.DEPLOY_PATH}
-         IMAGE_TAG=${env.BUILD_NUMBER} docker compose pull
-         IMAGE_TAG=${env.BUILD_NUMBER} docker compose up -d --remove-orphans
+        set -eux
+        cd ${env.DEPLOY_PATH}
+        IMAGE_TAG=${env.BUILD_NUMBER} docker compose pull
+        IMAGE_TAG=${env.BUILD_NUMBER} docker compose up -d --remove-orphans
       '
 
-      # === 5️⃣ Générer APP_KEY si manquante ===
+      # === 5️⃣ Génération automatique de APP_KEY ===
       echo "🔑 Vérification de la clé APP_KEY..."
       ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} '
-         if ! docker exec ticklab_app php artisan env | grep -q "APP_KEY=base64:"; then
-            docker exec ticklab_app php artisan key:generate --force
-            echo "✅ Nouvelle clé Laravel générée"
-         else
-            echo "ℹ️  APP_KEY déjà existante"
-         fi
+        set -eux
+        # Vérifie si APP_KEY existe déjà dans le fichier .env
+        if ! grep -q "APP_KEY=" ${env.DEPLOY_PATH}/app_code/.env; then
+            echo "⚙️  Génération d'une nouvelle clé APP_KEY..."
+            docker exec ticklab_app php artisan key:generate --show > /tmp/key.txt
+            APP_KEY=$(cat /tmp/key.txt | tr -d "\\r\\n")
+            sed -i "/APP_ENV=/a APP_KEY=\${APP_KEY}" ${env.DEPLOY_PATH}/app_code/.env
+            rm -f /tmp/key.txt
+            echo "✅ APP_KEY générée et ajoutée dans .env"
+        else
+            echo "ℹ️  APP_KEY déjà présente dans .env"
+        fi
       '
     """
-  } // end withCredentials
-} // end sshagent
+  }
+}
 
 echo "=== 🔍 Vérification du déploiement ==="
 sh """
