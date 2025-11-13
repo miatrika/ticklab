@@ -3,20 +3,20 @@ echo "=== 🚀 STAGE: Deploy to remote server ==="
 sshagent(['deploy-ssh']) {
   withCredentials([string(credentialsId: 'ticklab-db-password', variable: 'DB_PASSWORD')]) {
 
-    sh '''
+    sh """
       set -eux
 
-      echo "🚀 Déploiement sur $DEPLOY_HOST"
+      echo "🚀 Déploiement sur ${DEPLOY_HOST}"
 
       # === 1️⃣ Préparer les dossiers sur le serveur distant ===
-      ssh -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST "
-        mkdir -p $DEPLOY_PATH/nginx
-        mkdir -p $DEPLOY_PATH/app_code
+      ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
+        mkdir -p ${DEPLOY_PATH}/nginx
+        mkdir -p ${DEPLOY_PATH}/app_code
       "
 
       # === 2️⃣ Créer le .env sur le serveur ===
       echo "⚙️  Création du .env sur le serveur..."
-      ssh -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST "cat > $DEPLOY_PATH/app_code/.env <<EOF
+      ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} \"cat > ${DEPLOY_PATH}/app_code/.env <<EOF
 APP_NAME=TickLab
 APP_ENV=production
 APP_DEBUG=false
@@ -30,49 +30,44 @@ DB_HOST=db
 DB_PORT=3306
 DB_DATABASE=ticklab
 DB_USERNAME=root
-DB_PASSWORD=$DB_PASSWORD
+DB_PASSWORD=${DB_PASSWORD}
 
 CACHE_DRIVER=file
 SESSION_DRIVER=database
 QUEUE_CONNECTION=sync
-EOF"
+EOF\"
 
       echo "✅ .env créé avec succès"
 
       # === 3️⃣ Copie des fichiers docker-compose et nginx ===
-      scp -o StrictHostKeyChecking=no docker-compose.prod.yml $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/docker-compose.yml
-      scp -o StrictHostKeyChecking=no nginx/default.conf $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/nginx/default.conf
+      scp -o StrictHostKeyChecking=no docker-compose.prod.yml ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/docker-compose.yml
+      scp -o StrictHostKeyChecking=no nginx/default.conf ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/nginx/default.conf
 
       # === 4️⃣ Déploiement Docker ===
-      ssh -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST "
+      ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
         set -eux
-        cd $DEPLOY_PATH
-        IMAGE_TAG=$BUILD_NUMBER docker compose pull
-        IMAGE_TAG=$BUILD_NUMBER docker compose up -d --remove-orphans
+        cd ${DEPLOY_PATH}
+        IMAGE_TAG=${BUILD_NUMBER} docker compose pull
+        IMAGE_TAG=${BUILD_NUMBER} docker compose up -d --remove-orphans
       "
 
       # === 5️⃣ Génération automatique de APP_KEY ===
       echo "🔑 Vérification de la clé APP_KEY..."
-      ssh -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST "
+      ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
         set -eux
 
-        ENV_FILE=\"$DEPLOY_PATH/app_code/.env\"
+        ENV_FILE=\\\"${DEPLOY_PATH}/app_code/.env\\\"
 
         if ! grep -q 'APP_KEY=' \$ENV_FILE; then
             echo '⚙️  Génération d\\'une nouvelle clé APP_KEY...'
 
-            # On génère la clé dans le container, sans --show pour compatibilité
-            KEY_OUTPUT=\$(docker exec ticklab_app php artisan key:generate --force 2>&1 || true)
+            # Génération dans le container
+            docker exec ticklab_app php artisan key:generate --force
 
-            # Extraire la clé si artisan ne l’affiche pas (Laravel <8)
-            APP_KEY=\$(docker exec ticklab_app php -r 'require \"vendor/autoload.php\"; echo env(\"APP_KEY\");')
+            # Récupération de la clé Laravel
+            APP_KEY=\\\$(docker exec ticklab_app php -r 'require \"vendor/autoload.php\"; echo env(\"APP_KEY\");')
 
-            # Si vide, on tente encore une fois
-            if [ -z \"\$APP_KEY\" ]; then
-                APP_KEY=\$(docker exec ticklab_app php artisan tinker --execute='echo env(\"APP_KEY\");')
-            fi
-
-            # Ajouter dans le .env distant
+            # Ajouter dans le .env distant si récupérée
             if [ -n \"\$APP_KEY\" ]; then
                 sed -i \"/APP_ENV=/a APP_KEY=\$APP_KEY\" \$ENV_FILE
                 echo '✅ APP_KEY générée et ajoutée dans .env'
@@ -84,8 +79,7 @@ EOF"
             echo 'ℹ️  APP_KEY déjà présente dans .env'
         fi
       "
-
-    '''
+    """
   }
 }
 
