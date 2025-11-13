@@ -21,6 +21,7 @@ APP_NAME=TickLab
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=http://localhost:8080
+APP_KEY=base64:E4fqEzMmJBOQeHr7Z10WmUKwds+obTfE+cHJxPOnOPs=
 
 LOG_CHANNEL=stack
 LOG_LEVEL=debug
