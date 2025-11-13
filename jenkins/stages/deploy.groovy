@@ -16,12 +16,12 @@ sshagent(['deploy-ssh']) {
 
     # === 2️⃣ Copier le code Laravel complet ===
     echo "📦 Copie du code Laravel complet..."
-    # ⚠️ Utilisation de $WORKSPACE pour pointer correctement vers le code
     scp -r $WORKSPACE/* ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/app_code/
 
     # === 3️⃣ Créer le .env sur le serveur ===
     echo "⚙️  Création du .env sur le serveur..."
-    ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "cat > ${DEPLOY_PATH}/app_code/.env <<EOF
+    ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
+      cat > ${DEPLOY_PATH}/app_code/.env <<EOF
 APP_NAME=TickLab
 APP_ENV=production
 APP_DEBUG=false
@@ -40,7 +40,8 @@ DB_PASSWORD=${DB_PASSWORD}
 CACHE_DRIVER=file
 SESSION_DRIVER=database
 QUEUE_CONNECTION=sync
-EOF"
+EOF
+    "
 
     echo "✅ .env créé avec succès"
 
@@ -60,9 +61,9 @@ EOF"
     echo "🔑 Vérification de la clé APP_KEY..."
     ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
       set -eux
-      ENV_FILE='${DEPLOY_PATH}/app_code/.env'
-      if ! grep -q 'APP_KEY=' \"\$ENV_FILE\"; then
-          echo '⚙️  APP_KEY manuelle à insérer nécessaire'
+      ENV_FILE=${DEPLOY_PATH}/app_code/.env
+      if ! grep -q 'APP_KEY=' \$ENV_FILE; then
+          echo '⚙️  APP_KEY manuelle à insérer nécessaire dans .env'
       else
           echo 'ℹ️  APP_KEY déjà présente dans .env'
       fi
