@@ -1,7 +1,7 @@
  echo "=== 🚀 STAGE: Deploy to remote server ==="
 
   sshagent(['deploy-ssh']) {
-    withCredentials([string(credentialsId: 'ticklab-db-pass', variable: 'DB_PASSWORD')]) {
+    withCredentials([string(credentialsId: 'ticklab-db-password', variable: 'DB_PASSWORD')]) {
 
       sh """
         echo "🚀 Déploiement sur ${env.DEPLOY_HOST}"
@@ -16,25 +16,25 @@
         echo "⚙️  Génération du .env.deploy sur le serveur..."
         ssh -o StrictHostKeyChecking=no ${env.DEPLOY_USER}@${env.DEPLOY_HOST} '
            cat > ${env.DEPLOY_PATH}/.env.deploy <<EOF
-APP_NAME=TickLab
-APP_ENV=production
-APP_DEBUG=false
-APP_URL=http://localhost:${env.HOST_HTTP_PORT ?: 8080}
+              APP_NAME=TickLab
+              APP_ENV=production
+              APP_DEBUG=false
+              APP_URL=http://localhost:${env.HOST_HTTP_PORT ?: 8080}
 
-LOG_CHANNEL=stack
-LOG_LEVEL=debug
+              LOG_CHANNEL=stack
+              LOG_LEVEL=debug
 
-DB_CONNECTION=mysql
-DB_HOST=db
-DB_PORT=3306
-DB_DATABASE=ticklab
-DB_USERNAME=root
-DB_PASSWORD=${DB_PASSWORD}
+              DB_CONNECTION=mysql
+              DB_HOST=db
+              DB_PORT=3306
+              DB_DATABASE=ticklab
+              DB_USERNAME=root
+              DB_PASSWORD=${DB_PASSWORD}
 
-CACHE_DRIVER=file
-SESSION_DRIVER=database
-QUEUE_CONNECTION=sync
-EOF
+              CACHE_DRIVER=file
+              SESSION_DRIVER=database
+              QUEUE_CONNECTION=sync
+              EOF
         echo "✅ .env.deploy créé avec succès"
         '
 
