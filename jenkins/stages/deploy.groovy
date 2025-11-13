@@ -58,25 +58,6 @@ EOF
       IMAGE_TAG=${BUILD_NUMBER} DB_PASSWORD='${DB_PASSWORD}' docker compose up -d --remove-orphans
     "
 
-    // # === 6️⃣ Vérification de APP_KEY ===
-    // echo "🔑 Vérification de la clé APP_KEY..."
-    // ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
-    //   set -eux
-    //   ENV_FILE='${DEPLOY_PATH}/app_code/.env'
-
-    //   if [ ! -f \"\$ENV_FILE\" ]; then
-    //       echo '❌ Fichier .env non trouvé à '\$ENV_FILE
-    //       exit 1
-    //   fi
-
-    //   if grep -q '^APP_KEY=' \"\$ENV_FILE\"; then
-    //       echo 'ℹ️  APP_KEY déjà présente dans .env'
-    //   else
-    //       echo '⚙️  Génération automatique de APP_KEY...'
-    //       docker exec ticklab_app php artisan key:generate --force
-    //       echo '✅ APP_KEY générée avec succès'
-    //   fi
-    // "
     '''
   }
 }
