@@ -4,11 +4,19 @@ sshagent(['deploy-ssh']) {
   withCredentials([string(credentialsId: 'ticklab-db-password', variable: 'DB_PASSWORD')]) {
     sh """
     set -eux
+
+    # Créer les dossiers et appliquer les permissions correctes
     ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
       mkdir -p ${DEPLOY_PATH}/nginx
       mkdir -p ${DEPLOY_PATH}/app_code
+      mkdir -p ${DEPLOY_PATH}/storage ${DEPLOY_PATH}/bootstrap/cache
+      chmod -R 777 ${DEPLOY_PATH}/storage ${DEPLOY_PATH}/bootstrap/cache
     "
-    scp -r $WORKSPACE/* ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/app_code/
+
+    # Copier tout sauf les dossiers sensibles
+    rsync -av --exclude='storage' --exclude='bootstrap/cache' $WORKSPACE/ ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/app_code/
+
+    # Créer le .env
     ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "cat > ${DEPLOY_PATH}/app_code/.env <<EOF
 APP_NAME=TickLab
 APP_ENV=production
@@ -33,8 +41,12 @@ SESSION_DOMAIN=192.168.100.50
 QUEUE_CONNECTION=sync
 EOF
     "
+
+    # Copier docker-compose et nginx
     scp -o StrictHostKeyChecking=no docker-compose.prod.yml ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/docker-compose.yml
     scp -o StrictHostKeyChecking=no nginx/default.conf ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/nginx/default.conf
+
+    # Lancer les containers
     ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
       cd ${DEPLOY_PATH}
       IMAGE_TAG=${BUILD_NUMBER} DB_PASSWORD='${DB_PASSWORD}' docker compose pull
@@ -43,4 +55,5 @@ EOF
     """
   }
 }
+
 echo "✅ Deployment completed successfully"
