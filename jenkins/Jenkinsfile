@@ -22,35 +22,19 @@ pipeline {
         }
 
         stage('Build') {
-            steps {
-                script {
-                    load "${env.WORKSPACE}/jenkins/stages/build.groovy"
-                }
-            }
+            steps { script { load "${env.WORKSPACE}/jenkins/stages/build.groovy" } }
         }
 
         stage('Test & Quality') {
             parallel {
                 stage('Unit Tests') {
-                    steps {
-                        ansiColor('xterm') {
-                            script { load "${env.WORKSPACE}/jenkins/stages/test.groovy" }
-                        }
-                    }
+                    steps { ansiColor('xterm') { script { load "${env.WORKSPACE}/jenkins/stages/test.groovy" } } }
                 }
                 stage('Static Analysis') {
-                    steps {
-                        ansiColor('xterm') {
-                            script { load "${env.WORKSPACE}/jenkins/stages/qa.groovy" }
-                        }
-                    }
+                    steps { ansiColor('xterm') { script { load "${env.WORKSPACE}/jenkins/stages/qa.groovy" } } }
                 }
                 stage('Security Scan') {
-                    steps {
-                        ansiColor('xterm') {
-                            script { load "${env.WORKSPACE}/jenkins/stages/security.groovy" }
-                        }
-                    }
+                    steps { ansiColor('xterm') { script { load "${env.WORKSPACE}/jenkins/stages/security.groovy" } } }
                 }
             }
         }
@@ -58,83 +42,23 @@ pipeline {
         stage('Test Credentials') {
             steps {
                 script {
-                    echo "🧪 Vérification des credentials"
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'U', passwordVariable: 'P')]) {
-                        echo "✅ Credentials trouvés pour utilisateur: ${U}"
+                        echo "✅ Docker credentials OK for ${U}"
                     }
                 }
             }
         }
 
         stage('Package & Push') {
-            steps {
-                ansiColor('xterm') {
-                    script {
-                        echo "=== 🚀 Étape Package & Push démarrée ==="
-
-                        // Build de l'image avec le tag du build
-                        sh """
-                            echo "🛠️  Construction de l'image Docker : ${REGISTRY}:${IMAGE_TAG}"
-                            docker build -t ${REGISTRY}:${IMAGE_TAG} .
-                        """
-                        echo "✅ Build terminé"
-
-                        // Connexion et push sur Docker Hub
-                        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
-                            sh '''
-                                echo "🔑 Connexion à Docker Hub..."
-                                echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin
-                                echo "✅ Connexion Docker Hub réussie"
-
-                                echo "🏷️  Tagging de l'image latest..."
-                                docker tag ${REGISTRY}:${IMAGE_TAG} ${REGISTRY}:latest
-
-                                echo "📤 Push de l'image versionnée et latest..."
-                                docker push ${REGISTRY}:${IMAGE_TAG}
-                                docker push ${REGISTRY}:latest
-
-                                echo "✅ Push Docker terminé avec succès"
-                                docker logout || true
-                            '''
-                        }
-
-
-                        echo "=== ✅ Fin du stage Package & Push ==="
-                    }
-                }
-            }
+            steps { script { load "${env.WORKSPACE}/jenkins/stages/package_push.groovy" } }
         }
-
 
         stage('Build & Push Nginx') {
-            steps {
-                script {
-                    def imageTag = "${env.IMAGE_TAG}"
-                    sh """
-                        export DOCKER_BUILDKIT=1
-                        docker build -t docker.io/miatrika05/ticklab-nginx:${IMAGE_TAG} \
-                        --build-arg APP_IMAGE=docker.io/miatrika05/ticklab:${IMAGE_TAG} \
-                        -f docker/nginx/Dockerfile .
-                    """
-
-                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
-                        sh """
-                            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
-                            docker push docker.io/miatrika05/ticklab-nginx:${imageTag}
-                            docker logout
-                        """
-                    }
-                }
-            }
+            steps { script { load "${env.WORKSPACE}/jenkins/stages/build_push_nginx.groovy" } }
         }
 
-
         stage('Deploy') {
-            steps {
-                ansiColor('xterm') {
-                    script { load 'jenkins/stages/deploy.groovy' }
-                }
-            }
+            steps { script { load "${env.WORKSPACE}/jenkins/stages/deploy.groovy" } }
         }
     }
 
