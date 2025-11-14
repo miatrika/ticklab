@@ -13,10 +13,10 @@ sshagent(['deploy-ssh']) {
       chmod -R 777 ${DEPLOY_PATH}/storage ${DEPLOY_PATH}/bootstrap/cache
     "
 
-    # Copier tout sauf les dossiers sensibles
-    rsync -av --exclude='storage' --exclude='bootstrap/cache' $WORKSPACE/ ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/app_code/
+    # Copier tout sauf les dossiers sensibles et l'ancien .env
+    rsync -av --exclude='storage' --exclude='bootstrap/cache' --exclude='.env*' $WORKSPACE/ ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/app_code/
 
-    # Créer le .env
+    # Créer le .env directement sur le serveur avec le mot de passe injecté
     ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "cat > ${DEPLOY_PATH}/app_code/.env <<EOF
 APP_NAME=TickLab
 APP_ENV=production
@@ -46,7 +46,7 @@ EOF
     scp -o StrictHostKeyChecking=no docker-compose.prod.yml ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/docker-compose.yml
     scp -o StrictHostKeyChecking=no nginx/default.conf ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/nginx/default.conf
 
-    # Lancer les containers
+    # Lancer les containers en injectant le mot de passe
     ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
       cd ${DEPLOY_PATH}
       IMAGE_TAG=${BUILD_NUMBER} DB_PASSWORD='${DB_PASSWORD}' docker compose pull
