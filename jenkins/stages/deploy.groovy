@@ -51,6 +51,13 @@ EOF
       cd ${DEPLOY_PATH}
       IMAGE_TAG=${BUILD_NUMBER} DB_PASSWORD='${DB_PASSWORD}' docker compose pull
       IMAGE_TAG=${BUILD_NUMBER} DB_PASSWORD='${DB_PASSWORD}' docker compose up -d --remove-orphans
+
+       #On attend MySQL
+      sleep 10
+
+      # Migrations + Seed
+      docker exec ticklab_app php artisan migrate --force
+      docker exec ticklab_app php artisan db:seed --force
     "
     """
   }
