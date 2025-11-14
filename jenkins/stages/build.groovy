@@ -1,5 +1,4 @@
-stage('Build App') {
-    steps {
+
         echo "=== STAGE: Build app ==="
 
         sh '''
@@ -13,5 +12,4 @@ stage('Build App') {
         '''
 
         echo "✅ Build stage completed successfully."
-    }
-}
+
