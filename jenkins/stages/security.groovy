@@ -10,6 +10,6 @@ docker run --rm \
   --ignore-unfixed \
   ticklab_app:latest || true
 
-docker-compose run --rm app composer audit || true
+docker compose run --rm app composer audit || true
 '''
 echo "=== Security stage finished ==="
