@@ -7,14 +7,18 @@ sshagent(['deploy-ssh']) {
 
     # Créer les dossiers et appliquer les permissions correctes
     ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
-      mkdir -p ${DEPLOY_PATH}/nginx
+      mkdir -p ${DEPLOY_PATH}/nginx/ssl
       mkdir -p ${DEPLOY_PATH}/app_code
       mkdir -p ${DEPLOY_PATH}/storage ${DEPLOY_PATH}/bootstrap/cache
       chmod -R 777 ${DEPLOY_PATH}/storage ${DEPLOY_PATH}/bootstrap/cache
     "
 
     # Copier tout sauf les dossiers sensibles et l'ancien .env
-    rsync -av --exclude='storage' --exclude='bootstrap/cache' --exclude='.env*' $WORKSPACE/ ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/app_code/
+    rsync -av --exclude='storage' --exclude='bootstrap/cache' --exclude='.env*' \
+      $WORKSPACE/ ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/app_code/
+
+    # Copier le dossier SSL pour HTTPS
+    rsync -av ./nginx/ssl ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/nginx/
 
     # Créer le .env directement sur le serveur avec le mot de passe injecté
     ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "cat > ${DEPLOY_PATH}/app_code/.env <<EOF
@@ -22,7 +26,7 @@ APP_NAME=TickLab
 APP_ENV=production
 APP_KEY=base64:E4fqEzMmJBOQeHr7Z10WmUKwds+obTfE+cHJxPOnOPs=
 APP_DEBUG=false
-APP_URL=http://192.168.100.50:8080
+APP_URL=https://192.168.100.50:8443
 
 LOG_CHANNEL=stack
 LOG_LEVEL=debug
@@ -52,7 +56,7 @@ EOF
       IMAGE_TAG=${BUILD_NUMBER} DB_PASSWORD='${DB_PASSWORD}' docker compose pull
       IMAGE_TAG=${BUILD_NUMBER} DB_PASSWORD='${DB_PASSWORD}' docker compose up -d --remove-orphans
 
-       #On attend MySQL
+      # On attend MySQL
       sleep 10
 
       # Migrations + Seed
