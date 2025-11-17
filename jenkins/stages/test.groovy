@@ -8,6 +8,7 @@ docker rm -f ticklab_db || true
 docker volume rm ticklab_db-data || true
 
 # Démarrer la DB propre
+docker compose down -v || true
 docker compose up -d db
 
 # Lancer les tests Laravel
