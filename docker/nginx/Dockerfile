@@ -6,12 +6,12 @@ FROM nginx:alpine
 RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
-# Copier le code complet de l'app
-COPY --from=app /var/www/html /var/www/html
-
-# Copier les certificats SSL dans le conteneur
+# Copie SSL dans le conteneur
 COPY nginx/ssl /etc/nginx/ssl
+
+# Copie du code complet de l'app
+COPY --from=app /var/www/html /var/www/html
 
 RUN chown -R nginx:nginx /var/www/html
 
-EXPOSE 80 443
+EXPOSE 8443
