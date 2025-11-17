@@ -7,7 +7,6 @@ sshagent(['deploy-ssh']) {
 
     # Créer les dossiers et appliquer les permissions correctes
     ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
-      mkdir -p ${DEPLOY_PATH}/nginx/ssl
       mkdir -p ${DEPLOY_PATH}/app_code
       mkdir -p ${DEPLOY_PATH}/storage ${DEPLOY_PATH}/bootstrap/cache
       chmod -R 777 ${DEPLOY_PATH}/storage ${DEPLOY_PATH}/bootstrap/cache
@@ -16,9 +15,6 @@ sshagent(['deploy-ssh']) {
     # Copier tout sauf les dossiers sensibles et l'ancien .env
     rsync -av --exclude='storage' --exclude='bootstrap/cache' --exclude='.env*' \
       $WORKSPACE/ ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/app_code/
-
-    # Copier le dossier SSL pour HTTPS
-    rsync -av ./nginx/ssl ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/nginx/
 
     # Créer le .env directement sur le serveur avec le mot de passe injecté
     ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "cat > ${DEPLOY_PATH}/app_code/.env <<EOF
@@ -46,7 +42,7 @@ QUEUE_CONNECTION=sync
 EOF
     "
 
-    # Copier docker-compose et nginx
+    # Copier docker-compose et nginx (Nginx avec SSL intégré dans l'image)
     scp -o StrictHostKeyChecking=no docker-compose.prod.yml ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/docker-compose.yml
     scp -o StrictHostKeyChecking=no nginx/default.conf ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/nginx/default.conf
 
