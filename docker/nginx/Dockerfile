@@ -14,4 +14,4 @@ COPY --from=app /var/www/html /var/www/html
 
 RUN chown -R nginx:nginx /var/www/html
 
-EXPOSE 8443
+EXPOSE 443
