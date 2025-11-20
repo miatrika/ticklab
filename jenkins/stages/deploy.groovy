@@ -46,6 +46,7 @@ EOF
     # Copier docker-compose et nginx (Nginx avec SSL intégré dans l'image)
     scp -o StrictHostKeyChecking=no docker-compose.prod.yml ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/docker-compose.yml
     scp -o StrictHostKeyChecking=no nginx/default.conf ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/nginx/default.conf
+    scp -o StrictHostKeyChecking=no -r nginx/ssl ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/nginx/ssl
 
     # Lancer les containers en injectant le mot de passe
     ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
