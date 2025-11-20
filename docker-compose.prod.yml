@@ -74,6 +74,7 @@ services:
 
 volumes:
   db_data:
+      external: true
   vendor_data:
 
 networks:
