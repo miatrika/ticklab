@@ -8,6 +8,7 @@ sshagent(['deploy-ssh']) {
     # Créer les dossiers et appliquer les permissions correctes
     ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
       mkdir -p ${DEPLOY_PATH}/app_code
+      mkdir -p ${DEPLOY_PATH}/ssl
       mkdir -p ${DEPLOY_PATH}/storage ${DEPLOY_PATH}/bootstrap/cache
       chmod -R 777 ${DEPLOY_PATH}/storage ${DEPLOY_PATH}/bootstrap/cache
     "

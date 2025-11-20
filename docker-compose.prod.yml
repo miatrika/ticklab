@@ -43,7 +43,7 @@ services:
     volumes:
       - ./app_code:/var/www/html:ro
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro   # ← AJOUT SSL
+      - ${DEPLOY_PATH}/ssl:/etc/nginx/ssl:ro    # ← AJOUT SSL
       - /dev/null:/docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
     depends_on:
       - app
