@@ -4,6 +4,8 @@
         sh '''
         set -eux
 
+        docker compose down -v || true
+        
         # Build l’image de l’app en utilisant l’ancien docker-compose
         docker compose build app
 
