@@ -22,6 +22,27 @@ pipeline {
             steps { checkout scm }
         }
 
+        stage('Cleanup') {
+            steps {
+                sh '''
+                docker compose down -v --remove-orphans || true
+                docker volume rm ticklab_db_data || true
+                '''
+            }
+        }
+
+        stage('Start DB') {
+            steps {
+                sh '''
+                docker compose up -d db
+                until docker compose exec -T db mysqladmin ping -h "127.0.0.1" --silent; do
+                    echo "Waiting for MySQL..."
+                    sleep 3
+                done
+                '''
+            }
+        }
+
         stage('Build') {
             steps { script { load "${env.WORKSPACE}/jenkins/stages/build.groovy" } }
         }
