@@ -43,7 +43,8 @@ services:
     volumes:
       - ./app_code:/var/www/html:ro
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - /var/www/ticklab/nginx/ssl:/etc/nginx/ssl:ro   # ← AJOUT SSL
+      - ./nginx/ssl/ticklab.crt:/etc/nginx/ssl/ticklab.crt:ro
+      - ./nginx/ssl/ticklab.key:/etc/nginx/ssl/ticklab.key:ro
       - /dev/null:/docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
     depends_on:
       - app
