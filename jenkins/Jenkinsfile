@@ -22,21 +22,8 @@ pipeline {
             steps { checkout scm }
         }
 
-        stage('Cleanup') {
-            steps {
-                sh '''
-                docker compose down -v --remove-orphans || true
-                docker volume rm ticklab_db_data || true
-                '''
-            }
-        }
-
-        stage('Start DB') {
-            steps {
-                sh '''
-                docker compose up -d db
-                '''
-            }
+        stage('Load Ensure DB') {
+            steps { script { load "${env.WORKSPACE}/jenkins/stages/ensure-db.groovy" } }
         }
 
         stage('Build') {
