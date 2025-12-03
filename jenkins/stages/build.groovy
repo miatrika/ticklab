@@ -3,7 +3,7 @@
 
         sh '''
         set -eux
-        # Build l’image de l’app en utilisant l’ancien docker-compose
+        # Build l’image de l’app en utilisant l’ancien docker compose
         docker compose build app
 
         # Vérifier PHP
