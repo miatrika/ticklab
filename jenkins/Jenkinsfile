@@ -11,6 +11,9 @@ pipeline {
         DB_PASSWORD = credentials('ticklab-db-password')
     }
 
+    triggers {
+        pollSCM('H/2 * * * *')
+    }
     options {
         timestamps()
         buildDiscarder(logRotator(numToKeepStr: '20'))
