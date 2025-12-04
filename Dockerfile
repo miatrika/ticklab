@@ -23,6 +23,7 @@ RUN if [ "$INSTALL_DEV" = "true" ]; then \
 # ===============================
 FROM php:8.2-fpm
 
+ARG INSTALL_DEV=false
 # Installe les dépendances système et extensions PHP nécessaires à Laravel
 RUN apt-get update && apt-get install -y \
     git \
