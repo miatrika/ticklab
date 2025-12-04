@@ -10,13 +10,13 @@ COPY composer.json composer.lock ./
 
 # ARG pour définir l'environnement (par défaut = production)
 ARG APP_ENV=production
+ARG INSTALL_DEV=false
 
-RUN if [ "$APP_ENV" = "production" ]; then \
-        composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts; \
+RUN if [ "$INSTALL_DEV" = "true" ]; then \
+        composer install --no-interaction --prefer-dist --optimize-autoloader; \
     else \
-        composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts; \
+        composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader; \
     fi
-
 
 # ===============================
 # ⚙️ Étape 2 : Runtime PHP-FPM
