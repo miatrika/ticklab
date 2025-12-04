@@ -52,6 +52,11 @@ COPY . .
 # Copie du dossier vendor depuis l’étape précédente
 COPY --from=vendor /app/vendor ./vendor
 
+RUN if [ "$INSTALL_DEV" = "true" ]; then \
+    echo "Installing development tools..." && \
+    composer require --dev squizlabs/php_codesniffer phpstan/phpstan --no-interaction; \
+    fi
+    
 RUN composer dump-autoload --optimize && \
     php artisan package:discover --ansi || true
 
