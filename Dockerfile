@@ -13,9 +13,9 @@ ARG APP_ENV=production
 ARG INSTALL_DEV=false
 
 RUN if [ "$INSTALL_DEV" = "true" ]; then \
-        composer install --no-interaction --prefer-dist --optimize-autoloader; \
+        composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts; \
     else \
-        composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader; \
+        composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts; \
     fi
 
 # ===============================
@@ -50,6 +50,9 @@ COPY . .
 
 # Copie du dossier vendor depuis l’étape précédente
 COPY --from=vendor /app/vendor ./vendor
+
+RUN composer dump-autoload --optimize && \
+    php artisan package:discover --ansi || true
 
 # Permissions nécessaires à Laravel
 RUN mkdir -p storage bootstrap/cache \
