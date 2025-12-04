@@ -11,11 +11,10 @@ COPY composer.json composer.lock ./
 # ARG pour définir l'environnement (par défaut = production)
 ARG APP_ENV=production
 
-# Installe les dépendances (avec ou sans dev selon l'environnement)
-RUN if [ "$APP_ENV" = "local" ]; then \
-        composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts; \
-    else \
+RUN if [ "$APP_ENV" = "production" ]; then \
         composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts; \
+    else \
+        composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts; \
     fi
 
 

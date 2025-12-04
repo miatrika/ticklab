@@ -20,8 +20,8 @@ services:
       DB_USERNAME: ${DB_USERNAME:-root}
       DB_PASSWORD: ${DB_PASSWORD:-15182114}
       CI: ${CI:-false}
-    volumes:
-      - vendor_data:/var/www/html/vendor
+    # volumes:
+    #   - vendor_data:/var/www/html/vendor
     depends_on:
       - db
     networks:
