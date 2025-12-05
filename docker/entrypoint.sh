@@ -1,15 +1,57 @@
 #!/bin/bash
 set -e
 
-# === DÉTECTION DES COMMANDES STATIC ANALYSIS ===
-# Ne pas attendre MySQL pour les commandes d'analyse statique
+# === DÉTECTION DES COMMANDES QUI N'ONT PAS BESOIN DE MYSQL ===
 if [[ -n "$1" ]]; then
-    if [[ "$1" == *"phpcs"* ]] || [[ "$1" == *"phpstan"* ]] || \
-       [[ "$*" == *"phpcs"* ]] || [[ "$*" == *"phpstan"* ]] || \
+    # Commandes d'analyse statique
+    if [[ "$1" == *"phpcs"* ]] || [[ "$*" == *"phpcs"* ]] || \
+       [[ "$1" == *"phpstan"* ]] || [[ "$*" == *"phpstan"* ]] || \
        [[ "$1" == *"php-cs-fixer"* ]] || [[ "$*" == *"php-cs-fixer"* ]]; then
         echo "🔍 Static analysis command detected - skipping database operations"
         SKIP_DB_WAIT=true
         SKIP_MIGRATIONS=true
+    
+    # Commandes de test PHPUnit
+    elif [[ "$1" == *"phpunit"* ]] || [[ "$*" == *"phpunit"* ]] || \
+         [[ "$1" == *"test"* ]] || [[ "$*" == *"test"* ]]; then
+        echo "🧪 Test command detected - checking database configuration..."
+        
+        # Vérifier si on utilise SQLite
+        if [ -f /var/www/html/.env ]; then
+            if grep -q "DB_CONNECTION=sqlite" /var/www/html/.env; then
+                echo "📁 SQLite detected in .env - skipping MySQL wait"
+                SKIP_DB_WAIT=true
+                SKIP_MIGRATIONS=true
+            elif [ "$DB_CONNECTION" = "sqlite" ] || [ "${DB_CONNECTION:-}" = "sqlite" ]; then
+                echo "📁 SQLite detected in environment - skipping MySQL wait"
+                SKIP_DB_WAIT=true
+                SKIP_MIGRATIONS=true
+            fi
+        fi
+    
+    # Commandes Composer (install, update, etc.)
+    elif [[ "$1" == "composer" ]]; then
+        echo "📦 Composer command detected - skipping database operations"
+        SKIP_DB_WAIT=true
+        SKIP_MIGRATIONS=true
+    fi
+fi
+
+# === DÉTECTION ENVIRONNEMENT CI/TEST ===
+if [ "$CI" = "true" ] || [ "$APP_ENV" = "testing" ] || [ "${APP_ENV:-}" = "testing" ]; then
+    echo "🏗️ CI/Test environment detected"
+    
+    # En mode test, vérifier si on a besoin de MySQL
+    if [ -f /var/www/html/.env ]; then
+        if grep -q "DB_CONNECTION=sqlite" /var/www/html/.env || \
+           [ "$DB_CONNECTION" = "sqlite" ] || \
+           [ "${DB_CONNECTION:-}" = "sqlite" ]; then
+            echo "📁 Test environment with SQLite - skipping MySQL"
+            SKIP_DB_WAIT=true
+            SKIP_MIGRATIONS=true
+        else
+            echo "🗄️ Test environment with MySQL - will wait for database"
+        fi
     fi
 fi
 
@@ -22,15 +64,28 @@ if [ "${SKIP_DB_WAIT:-false}" != "true" ] && [ -n "$DB_HOST" ] && [ -n "$DB_PORT
     while ! nc -z "$DB_HOST" "$DB_PORT"; do
         if [ $attempt -ge $max_attempts ]; then
             echo "❌ MySQL not available after $max_attempts attempts"
-            exit 1
+            
+            # En mode CI, ne pas faire échouer si c'est pour des tests
+            if [ "$CI" = "true" ] || [ "$APP_ENV" = "testing" ]; then
+                echo "⚠️ CI/Test mode - continuing without MySQL"
+                SKIP_DB_WAIT=true
+                SKIP_MIGRATIONS=true
+                break
+            else
+                exit 1
+            fi
         fi
         echo "Attempt $attempt/$max_attempts: MySQL not ready yet..."
         sleep 2
         attempt=$((attempt + 1))
     done
-    echo "✅ MySQL is up and running."
+    
+    if [ "${SKIP_DB_WAIT:-false}" != "true" ]; then
+        echo "✅ MySQL is up and running."
+    fi
+    
 elif [ "${SKIP_DB_WAIT:-false}" = "true" ]; then
-    echo "⏭️ Skipping MySQL wait for static analysis"
+    echo "⏭️ Skipping MySQL wait"
 else
     echo "⚠️ DB_HOST or DB_PORT not set, skipping database connection check"
 fi
@@ -44,10 +99,10 @@ else
 fi
 
 # === GESTION ENVIRONNEMENT CI/CD ===
-if [ "$CI" = "true" ] || [ "${SKIP_DB_WAIT:-false}" = "true" ]; then
-    echo "🏗️ CI/test environment detected — skipping PHP-FPM start."
+if [ "$CI" = "true" ] || [ "${SKIP_DB_WAIT:-false}" = "true" ] || [ "$APP_ENV" = "testing" ]; then
+    echo "🏗️ CI/Test environment detected — executing command directly."
     
-    # Si une commande a été passée (ex: composer, phpcs, phpstan, tests)
+    # Si une commande a été passée
     if [ -n "$1" ]; then
         echo "🚀 Executing command: $@"
         exec "$@"
