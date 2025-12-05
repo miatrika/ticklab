@@ -1,47 +1,52 @@
 echo "=== STAGE: Run Laravel tests ==="
 
 sh '''
+#!/bin/bash
 set -eux
 
-# 1. Nettoyer
-docker compose down -v --remove-orphans || true
+# 1. Nettoyer les anciens containers
+docker compose down -v --remove-orphans 2>/dev/null || true
 
-# 2. Démarrer MySQL proprement
-docker volume rm -f ticklab_db_data 2>/dev/null || true
-docker compose up -d db
+# 2. Démarrer db et app ENSEMBLE
+echo "Démarrage des services..."
+docker compose up -d db app
 
-# 3. Attendre MySQL MAX 20 secondes
-echo "Waiting for MySQL..."
-for i in {1..10}; do
-    if docker compose exec -T db mysqladmin ping -h localhost --silent 2>/dev/null; then
-        echo "MySQL ready after ${i} attempts"
-        break
-    fi
-    echo "Attempt ${i}/10..."
-    sleep 2
-done
+# 3. Attendre BRIÈVEMENT le démarrage
+echo "Attente de démarrage (5s)..."
+sleep 5
 
-# 4. Exécuter les tests (avec fallback SQLite)
-docker compose run --rm -T app sh -c "
-    # Utiliser SQLite si MySQL n'est pas disponible
-    if ! mysql -h db -uroot -p15182114 -e 'SELECT 1' 2>/dev/null; then
-        echo 'Using SQLite instead of MySQL'
-        echo 'APP_ENV=testing
-        DB_CONNECTION=sqlite
-        DB_DATABASE=:memory:' > .env
-    else
-        cp .env.testing .env
-    fi
+# 4. Exécuter les tests - IMPORTANT: utiliser docker compose exec au lieu de run
+echo "Exécution des tests PHPUnit..."
+docker compose exec -T app bash -c "
+    # Configuration pour les tests
+    cat > .env << 'EOF'
+APP_ENV=testing
+DB_CONNECTION=sqlite
+DB_DATABASE=:memory:
+CACHE_DRIVER=array
+SESSION_DRIVER=array
+QUEUE_CONNECTION=sync
+EOF
     
-    # Préparation
+    # Préparer l'environnement
     mkdir -p storage/framework/cache/data storage/framework/views storage/framework/sessions storage/logs
     chmod -R 777 storage
     
-    # Exécution
+    # Nettoyer et migrer
+    php artisan config:clear
+    php artisan cache:clear
     php artisan migrate:fresh --seed --force
-    vendor/bin/phpunit --configuration phpunit.xml
+    
+    # Lancer les tests
+    vendor/bin/phpunit --configuration phpunit.xml --testdox
 "
 
-# 5. Cleanup
-docker compose down -v || true
+# 5. Capturer le code de sortie
+TEST_EXIT=$?
+
+# 6. Nettoyer
+docker compose down -v 2>/dev/null || true
+
+# 7. Sortir avec le code de test
+exit $TEST_EXIT
 '''
