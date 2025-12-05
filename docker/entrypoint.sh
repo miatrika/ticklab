@@ -11,7 +11,7 @@ if [[ -n "$1" ]]; then
         SKIP_DB_WAIT=true
         SKIP_MIGRATIONS=true
     
-    # Commandes de test PHPUnit
+    # Commandes de test PHPUnit - IMPORTANT: garder les migrations pour SQLite!
     elif [[ "$1" == *"phpunit"* ]] || [[ "$*" == *"phpunit"* ]] || \
          [[ "$1" == *"test"* ]] || [[ "$*" == *"test"* ]]; then
         echo "🧪 Test command detected - checking database configuration..."
@@ -19,14 +19,21 @@ if [[ -n "$1" ]]; then
         # Vérifier si on utilise SQLite
         if [ -f /var/www/html/.env ]; then
             if grep -q "DB_CONNECTION=sqlite" /var/www/html/.env; then
-                echo "📁 SQLite detected in .env - skipping MySQL wait"
+                echo "📁 SQLite detected in .env - skipping MySQL wait but KEEPING migrations"
                 SKIP_DB_WAIT=true
-                SKIP_MIGRATIONS=true
+                # IMPORTANT: On garde les migrations pour les tests SQLite!
+                SKIP_MIGRATIONS=false
             elif [ "$DB_CONNECTION" = "sqlite" ] || [ "${DB_CONNECTION:-}" = "sqlite" ]; then
-                echo "📁 SQLite detected in environment - skipping MySQL wait"
+                echo "📁 SQLite detected in environment - skipping MySQL wait but KEEPING migrations"
                 SKIP_DB_WAIT=true
-                SKIP_MIGRATIONS=true
+                SKIP_MIGRATIONS=false
+            else
+                echo "🗄️ MySQL detected for tests - will wait for database"
+                SKIP_MIGRATIONS=false
             fi
+        else
+            echo "📝 No .env file - checking environment variables"
+            SKIP_MIGRATIONS=false
         fi
     
     # Commandes Composer (install, update, etc.)
@@ -46,11 +53,13 @@ if [ "$CI" = "true" ] || [ "$APP_ENV" = "testing" ] || [ "${APP_ENV:-}" = "testi
         if grep -q "DB_CONNECTION=sqlite" /var/www/html/.env || \
            [ "$DB_CONNECTION" = "sqlite" ] || \
            [ "${DB_CONNECTION:-}" = "sqlite" ]; then
-            echo "📁 Test environment with SQLite - skipping MySQL"
+            echo "📁 Test environment with SQLite - skipping MySQL but keeping migrations"
             SKIP_DB_WAIT=true
-            SKIP_MIGRATIONS=true
+            # Garder les migrations pour SQLite en test!
+            SKIP_MIGRATIONS=false
         else
             echo "🗄️ Test environment with MySQL - will wait for database"
+            SKIP_MIGRATIONS=false
         fi
     fi
 fi
@@ -69,7 +78,10 @@ if [ "${SKIP_DB_WAIT:-false}" != "true" ] && [ -n "$DB_HOST" ] && [ -n "$DB_PORT
             if [ "$CI" = "true" ] || [ "$APP_ENV" = "testing" ]; then
                 echo "⚠️ CI/Test mode - continuing without MySQL"
                 SKIP_DB_WAIT=true
-                SKIP_MIGRATIONS=true
+                # Si on utilise SQLite, on garde les migrations
+                if [ "$DB_CONNECTION" = "sqlite" ] || [ "${DB_CONNECTION:-}" = "sqlite" ]; then
+                    SKIP_MIGRATIONS=false
+                fi
                 break
             else
                 exit 1
