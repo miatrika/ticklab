@@ -1,55 +1,47 @@
 echo "=== STAGE: Run Laravel tests ==="
 
 sh '''
-#!/bin/bash
 set -eux
 
-# Nettoyer
-docker compose down -v --remove-orphans 2>/dev/null || true
+# ⚠️ Ne JAMAIS supprimer les volumes !
+docker compose down --remove-orphans || true
 
-# Lancer les tests avec configuration complète
+# Installer les dépendances dans l'image app
+docker compose run --rm -T app composer install --no-interaction --prefer-dist
+
+# Préparer le .env de test
 docker compose run --rm -T app bash -c "
-    # Configuration complète
-    cat > .env << 'EOF'
-APP_KEY=base64:ev7dyC9EYuNtHUd0UrEl6m5GFdLkuygJeIIAcL+oBeo=
+cat > .env.testing << 'EOF'
 APP_ENV=testing
 APP_DEBUG=true
+APP_KEY=base64:ev7dyC9EYuNtHUd0UrEl6m5GFdLkuygJeIIAcL+oBeo=
 CI=true
-# SQLite avec fichier (pas :memory: pour que les migrations fonctionnent)
+
 DB_CONNECTION=sqlite
-DB_DATABASE=database/testing.sqlite
-# Désactiver MySQL
-DB_HOST=127.0.0.1
-DB_PORT=3306
-# Drivers mémoire
+DB_DATABASE=/var/www/html/database/testing.sqlite
+
 CACHE_DRIVER=array
 SESSION_DRIVER=array
 QUEUE_CONNECTION=sync
 EOF
-    
-    # Créer le répertoire et fichier de base de données
+"
+
+# Créer la base sqlite
+docker compose run --rm -T app bash -c "
     mkdir -p database
     touch database/testing.sqlite
     chmod 666 database/testing.sqlite
-    
-    # Préparer
-    mkdir -p storage/framework/cache/data storage/framework/views storage/framework/sessions storage/logs
-    chmod -R 777 storage
-    
-    # Clear
-    php artisan config:clear
-    php artisan cache:clear
-    
-    # Migrations (l'entrypoint va les exécuter car SKIP_MIGRATIONS=false pour SQLite)
-    echo 'Migrations should run via entrypoint...'
-    
-    # Si les migrations ne tournent pas via l'entrypoint, les forcer:
-    php artisan migrate:fresh --force
-    
-    # Tests
-    vendor/bin/phpunit --configuration phpunit.xml --testdox --stop-on-failure
 "
 
-# Cleanup
-docker compose down -v 2>/dev/null || true
+# Nettoyage Laravel
+docker compose run --rm -T app php artisan config:clear
+docker compose run --rm -T app php artisan cache:clear
+
+# Migrations SQLite
+docker compose run --rm -T app php artisan migrate:fresh --force --env=testing
+
+# Exécuter PHPUnit
+docker compose run --rm -T app vendor/bin/phpunit --configuration phpunit.xml --testdox
 '''
+
+echo "✅ Tests completed successfully."
