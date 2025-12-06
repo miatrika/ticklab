@@ -3,17 +3,21 @@ echo "=== STAGE: Run Laravel tests ==="
 sh '''
 set -eux
 
-# ❗ Ne PAS supprimer les volumes de la DB pour MySQL
-#docker compose down --remove-orphans || true
-# Forcer la création du réseau et maintenir "db" actif
+# 1️⃣ Démarrer seulement la DB
 docker compose up -d db
 
-# Installer les dépendances dans l'image app
-docker compose run --rm -T app composer install --no-interaction --prefer-dist
+# 2️⃣ Attendre que MySQL soit prêt
+echo "Waiting for MySQL..."
+for i in {1..20}; do
+    docker compose run --rm -T app bash -c "nc -z db 3306" && echo "MySQL is ready" && break
+    echo "MySQL not ready yet..."
+    sleep 2
+done
 
-# Préparer le .env.testing pour MySQL
+# 3️⃣ Préparer le .env.testing
 docker compose run --rm -T app bash -c "
 cat > .env.testing << 'EOF'
+APP_NAME=TickLab
 APP_ENV=testing
 APP_DEBUG=true
 APP_KEY=base64:ev7dyC9EYuNtHUd0UrEl6m5GFdLkuygJeIIAcL+oBeo=
@@ -32,29 +36,18 @@ QUEUE_CONNECTION=sync
 EOF
 "
 
-# Nettoyage Laravel
-docker compose run --rm -T app php artisan config:clear
-docker compose run --rm -T app php artisan cache:clear
+# 4️⃣ Installer les dépendances (si nécessaire)
+docker compose run --rm -T app composer install --no-interaction --prefer-dist
 
-# Démarrer la DB propre
-docker compose up -d db
+# 5️⃣ Forcer Laravel à utiliser .env.testing
+docker compose run --rm -T app php artisan config:clear --env=testing
+docker compose run --rm -T app php artisan cache:clear --env=testing
 
-# Vérifier que MySQL est up
-docker compose run --rm -T app bash -c "
-    echo 'Waiting for MySQL...';
-    for i in {1..20}; do
-        nc -z db 3306 && echo 'MySQL is ready' && exit 0;
-        echo 'MySQL not ready yet...';
-        sleep 2;
-    done;
-    echo 'MySQL startup timeout'; exit 1;
-"
-
-# Migrations MySQL
+# 6️⃣ Exécuter migrations en mode testing
 docker compose run --rm -T app php artisan migrate:fresh --force --env=testing
 
-# Exécuter PHPUnit
-docker compose run --rm -T app vendor/bin/phpunit --configuration phpunit.xml --testdox
+# 7️⃣ Lancer PHPUnit avec le bon env
+docker compose run --rm -T app vendor/bin/phpunit --configuration phpunit.xml --testdox --env=testing
 '''
 
 echo "✅ Tests completed successfully."
