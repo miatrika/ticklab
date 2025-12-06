@@ -3,21 +3,25 @@ echo "=== STAGE: Run Laravel tests ==="
 sh '''
 set -eux
 
-# 1️⃣ Démarrer uniquement la DB
-docker compose up -d db
+# 1️⃣ Démarrer les conteneurs DB et App
+docker compose up -d db app
 
 # 2️⃣ Attendre que MySQL soit prêt
 echo "Waiting for MySQL..."
+MAX_TRIES=20
+i=0
 until docker compose exec -T db bash -c "mysqladmin ping -uroot -p15182114 > /dev/null 2>&1"; do
+    i=$((i+1))
+    if [ "$i" -ge "$MAX_TRIES" ]; then
+        echo "MySQL did not become ready in time."
+        exit 1
+    fi
     echo "MySQL not ready yet..."
     sleep 2
 done
 echo "MySQL is ready!"
 
-# 3️⃣ Démarrer le conteneur app maintenant qu'on sait que MySQL est prêt
-docker compose up -d app
-
-# 4️⃣ Préparer le .env.testing
+# 3️⃣ Préparer le .env.testing
 docker compose exec -T app bash -c "cat > .env.testing << 'EOF'
 APP_NAME=TickLab
 APP_ENV=testing
@@ -38,17 +42,17 @@ QUEUE_CONNECTION=sync
 EOF
 "
 
-# 5️⃣ Installer les dépendances
-docker compose exec -T app composer install --no-interaction --prefer-dist
+# 4️⃣ Installer les dépendances Composer
+docker compose exec -T app bash -c "export COMPOSER_MEMORY_LIMIT=-1; composer install --no-interaction --prefer-dist"
 
-# 6️⃣ Clear cache & config
+# 5️⃣ Clear config & cache
 docker compose exec -T app php artisan config:clear --env=testing
 docker compose exec -T app php artisan cache:clear --env=testing
 
-# 7️⃣ Migrations
+# 6️⃣ Migrations
 docker compose exec -T app php artisan migrate:fresh --force --env=testing
 
-# 8️⃣ PHPUnit
+# 7️⃣ Lancer les tests PHPUnit
 docker compose exec -T app vendor/bin/phpunit --configuration phpunit.xml --testdox --env=testing
 '''
 
