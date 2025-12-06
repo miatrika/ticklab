@@ -5,6 +5,8 @@ set -eux
 
 # ❗ Ne PAS supprimer les volumes de la DB pour MySQL
 docker compose down --remove-orphans || true
+# Forcer la création du réseau et maintenir "db" actif
+docker compose up -d db
 
 # Installer les dépendances dans l'image app
 docker compose run --rm -T app composer install --no-interaction --prefer-dist
