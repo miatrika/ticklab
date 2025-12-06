@@ -68,4 +68,5 @@ volumes:
 
 networks:
   ticklab_net:
+    driver: bridge
 ##mande tsara aloha 
