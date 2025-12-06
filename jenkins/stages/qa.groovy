@@ -4,7 +4,7 @@
             set -eux
             
             # 1. Nettoyer
-            docker compose down -v --remove-orphans || true
+            docker compose down --remove-orphans || true
             
             # 2. Construire avec outils dev
             docker compose build --build-arg INSTALL_DEV=true app

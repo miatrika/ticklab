@@ -68,5 +68,5 @@ volumes:
 
 networks:
   ticklab_net:
-
+  
 ##mande tsara aloha 

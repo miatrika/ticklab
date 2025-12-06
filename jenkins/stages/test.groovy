@@ -4,7 +4,7 @@ sh '''
 set -eux
 
 # ❗ Ne PAS supprimer les volumes de la DB pour MySQL
-docker compose down --remove-orphans || true
+#docker compose down --remove-orphans || true
 # Forcer la création du réseau et maintenir "db" actif
 docker compose up -d db
 
