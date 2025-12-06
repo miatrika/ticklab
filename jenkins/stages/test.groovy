@@ -3,16 +3,16 @@ echo "=== STAGE: Run Laravel tests ==="
 sh '''
 set -eux
 
-# 1️⃣ Démarrer les conteneurs nécessaires (DB + app)
+# 1️⃣ Démarrer DB + app
 docker compose up -d db app
 
 # 2️⃣ Attendre que MySQL soit prêt
 echo "Waiting for MySQL..."
-for i in {1..20}; do
-    docker compose exec -T app bash -c "nc -z db 3306" && echo "MySQL is ready" && break
+until docker compose exec -T app bash -c "mysqladmin ping -h db -uroot -p15182114 > /dev/null 2>&1"; do
     echo "MySQL not ready yet..."
     sleep 2
 done
+echo "MySQL is ready!"
 
 # 3️⃣ Préparer le .env.testing
 docker compose exec -T app bash -c "cat > .env.testing << 'EOF'
@@ -35,17 +35,17 @@ QUEUE_CONNECTION=sync
 EOF
 "
 
-# 4️⃣ Installer les dépendances (si nécessaire)
+# 4️⃣ Installer dépendances
 docker compose exec -T app composer install --no-interaction --prefer-dist
 
-# 5️⃣ Forcer Laravel à utiliser .env.testing
+# 5️⃣ Clear cache & config
 docker compose exec -T app php artisan config:clear --env=testing
 docker compose exec -T app php artisan cache:clear --env=testing
 
-# 6️⃣ Exécuter migrations en mode testing
+# 6️⃣ Migrations
 docker compose exec -T app php artisan migrate:fresh --force --env=testing
 
-# 7️⃣ Lancer PHPUnit avec le bon env
+# 7️⃣ PHPUnit
 docker compose exec -T app vendor/bin/phpunit --configuration phpunit.xml --testdox --env=testing
 '''
 
