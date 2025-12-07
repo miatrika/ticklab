@@ -30,7 +30,7 @@ if [ -f /var/www/html/artisan ]; then
     php artisan migrate --force || true
 fi
 
-# === Commande à exécuter ===
+# === Lancement du process principal ===
 if [ $# -eq 0 ]; then
     echo "🚀 No command provided, starting PHP-FPM..."
     exec php-fpm
