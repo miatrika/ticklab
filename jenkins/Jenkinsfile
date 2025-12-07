@@ -21,8 +21,12 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps { checkout scm }
+        stage('Checkout')  {
+            steps {
+                sshagent(['github-ssh']) {
+                    sh 'git fetch --tags --force --progress --prune origin main'
+                }
+            }
         }
 
         stage('Load Ensure DB') {
