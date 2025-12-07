@@ -1,9 +1,7 @@
 #!/bin/bash
 set -e
 
-COMMAND="$@"
-
-echo "🏁 Entrypoint started with command: $COMMAND"
+echo "🏁 Entrypoint started with command: $@"
 
 # Si Composer → pas besoin de DB
 if [[ "$1" == "composer" ]]; then
@@ -16,7 +14,7 @@ if [[ "$1" == *"phpunit"* ]]; then
     echo "🧪 PHPUnit detected — will use MySQL"
 fi
 
-# === Attendre MySQL ===
+# === Attendre MySQL si défini ===
 if [ -n "$DB_HOST" ] && [ -n "$DB_PORT" ]; then
     echo "⏳ Waiting for MySQL at $DB_HOST:$DB_PORT..."
     until nc -z "$DB_HOST" "$DB_PORT"; do
@@ -26,17 +24,17 @@ if [ -n "$DB_HOST" ] && [ -n "$DB_PORT" ]; then
     echo "✅ MySQL is available."
 fi
 
-# === Migrations ===
+# === Migrations Laravel ===
 if [ -f /var/www/html/artisan ]; then
     echo "🔄 Running migrations..."
     php artisan migrate --force || true
 fi
 
-# Si pas de commande fournie, lancer php-fpm
-if [ -z "$COMMAND" ]; then
-    echo "🚀 Starting PHP-FPM..."
+# === Commande à exécuter ===
+if [ $# -eq 0 ]; then
+    echo "🚀 No command provided, starting PHP-FPM..."
     exec php-fpm
 else
-    echo "🚀 Running command: $COMMAND"
-    exec "$COMMAND"
+    echo "🚀 Running command: $@"
+    exec "$@"
 fi
