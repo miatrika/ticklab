@@ -32,8 +32,8 @@ fi
 
 # === Lancement du process principal ===
 if [ $# -eq 0 ]; then
-    echo "🚀 No command provided, starting PHP-FPM..."
-    exec php-fpm
+    echo "🚀 No command provided, starting PHP-FPM in foreground..."
+    exec php-fpm -F
 else
     echo "🚀 Running command: $@"
     exec "$@"
