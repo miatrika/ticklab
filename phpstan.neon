@@ -1,21 +1,28 @@
 # phpstan.neon
 parameters:
   level: 5
+
   paths:
     - app
     - routes
     - database
+
   bootstrapFiles:
     - vendor/autoload.php
+
   ignoreErrors:
+
+    # Accès à des propriétés dynamiques (Laravel/Eloquent)
     - '#Access to an undefined property .*::.*#'
 
-    # Méthodes statiques Eloquent dynamiques (create, firstOrCreate, updateOrCreate, where, find, count)
+    # Appels de méthodes personnalisées via auth()->user()
+    - '#Call to an undefined method Illuminate\\Contracts\\Auth\\Authenticatable::.*#'
+
+    # Méthodes Eloquent statiques dynamiques :
     - '#Call to an undefined static method .*::(create|firstOrCreate|updateOrCreate|where|find|count)\(\)#'
 
-    # Méthodes Auth dynamiques (user, id, check)
+    # Méthodes dynamiques du Auth manager (auth()->user(), auth()->id(), etc.)
     - '#Call to an undefined method Illuminate\\Contracts\\Auth\\Factory::(user|id|check)\(\)#'
 
-    # Variable $this dans routes/console.php
+    # Faux positif sur $this dans routes/console.php
     - '#Undefined variable: \$this#'
-
