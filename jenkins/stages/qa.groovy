@@ -28,6 +28,7 @@ fi
 # 5. Auto-correction du code (PHPCBF)
 echo "=== Running PHP Code Beautifier (PHPCBF) ==="
 docker compose exec -T app php vendor/bin/phpcbf --standard=PSR12 app || true
+echo "PHPCBF completed"
 
 # 6. Analyse de qualité du code (PHPCS)
 echo "=== Running PHP Code Sniffer ==="
