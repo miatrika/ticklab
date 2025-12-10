@@ -79,7 +79,7 @@ php artisan migrate:fresh --force
 echo "📁 Contenu du dossier tests :"
 ls -R tests/ || echo "⚠️ Aucun dossier tests trouvé"
 
-php artisan test -vvv --testdox || vendor/bin/phpunit -vvv --configuration phpunit.xml --testdox
+php artisan test --testdox || vendor/bin/phpunit --configuration phpunit.xml --testdox
 '
 
 echo "Cleaning up..."
