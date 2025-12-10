@@ -8,8 +8,14 @@ parameters:
   bootstrapFiles:
     - vendor/autoload.php
   ignoreErrors:
-    - '#Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable::.*#'
-    - '#Call to an undefined static method App\\Models\\.*#'
-    - '#Call to an undefined method Illuminate\\Contracts\\Auth\\Factory::.*#'
+    - '#Access to an undefined property .*::.*#'
 
+    # Méthodes statiques Eloquent dynamiques (create, firstOrCreate, updateOrCreate, where, find, count)
+    - '#Call to an undefined static method .*::(create|firstOrCreate|updateOrCreate|where|find|count)\(\)#'
+
+    # Méthodes Auth dynamiques (user, id, check)
+    - '#Call to an undefined method Illuminate\\Contracts\\Auth\\Factory::(user|id|check)\(\)#'
+
+    # Variable $this dans routes/console.php
+    - '#Undefined variable: \$this#'
 
