@@ -4,6 +4,7 @@ parameters:
   paths:
     - app
     - routes
+    - database
   bootstrapFiles:
     - vendor/autoload.php
 
