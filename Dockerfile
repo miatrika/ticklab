@@ -31,10 +31,8 @@ RUN apt-get update && apt-get install -y \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-
 # Ajout de Composer dans cette image
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
 
 WORKDIR /var/www/html
 
@@ -44,11 +42,9 @@ COPY . .
 # Copier vendor depuis la première étape
 COPY --from=vendor /app/vendor ./vendor
 
-
 # Optimisations Laravel
 RUN composer dump-autoload --optimize \
  && php artisan package:discover --ansi || true
-
 
 # Permissions Laravel
 RUN mkdir -p storage bootstrap/cache \
@@ -57,7 +53,6 @@ RUN mkdir -p storage bootstrap/cache \
 
 # PHP-FPM
 RUN echo "listen = 0.0.0.0:9000" > /usr/local/etc/php-fpm.d/zz-docker.conf
-
 
 
 # ===============================

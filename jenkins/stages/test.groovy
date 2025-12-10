@@ -86,8 +86,12 @@ docker exec ticklab_app_test bash -c "
     # Exécuter les migrations
     php artisan migrate:fresh --force
     
+    echo "📁 Contenu du dossier tests :"
+    ls -R tests/ || echo "⚠️ Aucun dossier tests trouvé"
+
     # Exécuter les tests
-    php artisan test --testdox || vendor/bin/phpunit --configuration phpunit.xml --testdox
+    php artisan test -vvv --testdox || vendor/bin/phpunit -vvv --configuration phpunit.xml --testdox
+    
 "
 
 # 5) Nettoyage
