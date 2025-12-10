@@ -14,7 +14,10 @@
             
             # 4. Vérifier l'installation
             echo "Checking installed tools:"
-            docker compose exec app ls -la vendor/bin/ | grep -E "phpcs|phpstan" || echo "Tools not found, installing..."
+            if ! docker compose exec -T app test -f vendor/bin/phpcs || ! docker compose exec -T app test -f vendor/bin/phpstan ; then
+                echo "Tools not found → installing..."
+                docker compose exec -T app composer require --dev squizlabs/php_codesniffer phpstan/phpstan
+            fi
             
             # 5. Exécuter PHPCS
             echo "=== Running PHP Code Sniffer ==="
