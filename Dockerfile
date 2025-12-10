@@ -14,7 +14,6 @@ RUN if [ "$INSTALL_DEV" = "true" ]; then \
     fi
 
 
-
 # ===============================
 # ⚙️ Étape 2 : Runtime PHP-FPM
 # ===============================
@@ -31,33 +30,31 @@ RUN apt-get update && apt-get install -y \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-# Ajout de Composer dans cette image
+# Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copier tout le code
+# Code application
 COPY . .
 
-# Copier vendor depuis la première étape
+# Vendor
 COPY --from=vendor /app/vendor ./vendor
 
 # Optimisations Laravel
 RUN composer dump-autoload --optimize \
  && php artisan package:discover --ansi || true
 
-# Permissions Laravel
-RUN mkdir -p storage bootstrap/cache \
+# Permissions + FIX STORAGE (version complète)
+RUN mkdir -p storage/framework/{cache,views,sessions} \
+ && mkdir -p bootstrap/cache \
+ && chmod -R 775 storage bootstrap/cache \
  && chown -R www-data:www-data storage bootstrap/cache
-
 
 # PHP-FPM
 RUN echo "listen = 0.0.0.0:9000" > /usr/local/etc/php-fpm.d/zz-docker.conf
 
-
-# ===============================
-# 🚀 ENTRYPOINT (attente MySQL)
-# ===============================
+# Entrypoint
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
