@@ -25,7 +25,7 @@
             
             # 6. Exécuter PHPStan
             echo "=== Running PHPStan ==="
-            docker compose exec -T app php vendor/bin/phpstan analyse --configuration=phpstan.neon --no-progress || echo "PHPStan completed"
+            docker compose exec -T app php vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=2G --no-progress || echo "PHPStan completed"
             
             # 7. Nettoyer
             docker compose down
