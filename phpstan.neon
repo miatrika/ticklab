@@ -4,6 +4,7 @@ parameters:
   paths:
     - app
     - routes
-  autoload_files:
-    - vendor/autoload.php
+  parameters
+    autoload_files:
+      - vendor/autoload.php
 
