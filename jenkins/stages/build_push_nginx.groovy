@@ -16,6 +16,7 @@ withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVari
 
     # Push Nginx image
     docker push docker.io/miatrika05/ticklab-nginx:${IMAGE_TAG}
+    docker push docker.io/miatrika05/ticklab-nginx:latest
 
     # Logout
     docker logout

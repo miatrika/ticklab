@@ -72,7 +72,7 @@ SESSION_DRIVER=array
 QUEUE_CONNECTION=sync
 EOF
 
-# === FIX LARAVEL STORAGE REQUIRED FOR TESTS ===
+ FIX LARAVEL STORAGE POUR TESTS 
 mkdir -p storage/framework/cache
 mkdir -p storage/framework/views
 mkdir -p storage/framework/sessions
