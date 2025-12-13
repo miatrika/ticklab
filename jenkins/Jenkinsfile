@@ -8,7 +8,8 @@ pipeline {
         DEPLOY_HOST = "192.168.100.50"
         DEPLOY_PATH = "/var/www/ticklab"
         APP_PORT = "443"
-        DB_PASSWORD = credentials('ticklab-db-password')
+        DB_PASSWORD = credentials('ticklab-db-password'
+        SONAR_TOKEN = credentials('sonarqube-token'))
     }
 
     triggers {
@@ -47,6 +48,14 @@ pipeline {
                 }
                 stage('Security Scan') {
                     steps { ansiColor('xterm') { script { load "${env.WORKSPACE}/jenkins/stages/security.groovy" } } }
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    load "${env.WORKSPACE}/jenkins/stages/sonarqube.groovy"
                 }
             }
         }

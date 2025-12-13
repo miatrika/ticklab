@@ -21,6 +21,9 @@ services:
       SONAR_JDBC_USERNAME: sonar
       SONAR_JDBC_PASSWORD: sonarpass
       SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+      SONAR_WEB_CONTEXT: /sonarqube
+
     ports:
       - "9000:9000"
     volumes:
