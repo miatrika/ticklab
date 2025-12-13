@@ -8,8 +8,8 @@ pipeline {
         DEPLOY_HOST = "192.168.100.50"
         DEPLOY_PATH = "/var/www/ticklab"
         APP_PORT = "443"
-        DB_PASSWORD = credentials('ticklab-db-password'
-        SONAR_TOKEN = credentials('sonarqube-token'))
+        DB_PASSWORD = credentials('ticklab-db-password')
+        SONAR_TOKEN = credentials('sonarqube-token')
     }
 
     triggers {
